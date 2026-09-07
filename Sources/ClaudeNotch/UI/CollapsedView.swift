@@ -3,16 +3,19 @@ import SwiftUI
 enum Fmt {
     static func hm(_ t: TimeInterval) -> String {
         let m = Int(t) / 60
-        return "\(m / 60)h \(String(format: "%02d", m % 60))m"
+        return m >= 60 ? "\(m / 60)h \(String(format: "%02d", m % 60))m" : "\(m)m"
     }
     static func pct(_ fraction: Double) -> String {
         "\(Int((fraction * 100).rounded()))%"
     }
-    /// "1h 10m" (under a day) or "4d 17h" (a day or more).
+    /// "40m" / "1h 10m" / "4d 17h" — time remaining. Under an hour it drops the hours entirely:
+    /// a limit tile showing "resets in 0h 40m" wastes its width on a zero.
     static func until(_ date: Date) -> String {
         let s = max(0, Int(date.timeIntervalSinceNow))
         let d = s / 86_400, h = (s % 86_400) / 3600, m = (s % 3600) / 60
-        return d > 0 ? "\(d)d \(h)h" : "\(h)h \(String(format: "%02d", m))m"
+        if d > 0 { return "\(d)d \(h)h" }
+        if h > 0 { return "\(h)h \(String(format: "%02d", m))m" }
+        return "\(m)m"
     }
     /// "35m" / "1h 05m" — a duration.
     static func dur(_ t: TimeInterval) -> String {
