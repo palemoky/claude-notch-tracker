@@ -3,6 +3,25 @@
     <channel>
         <title>Claude Notch</title>
         <item>
+            <title>0.3.4</title>
+            <description><![CDATA[
+                <h2>Numbers you can trust</h2>
+                <p>This release is all corrections. Two of them change figures you have been looking at, so here is what moved and why.</p>
+                <ul>
+                    <li><b>The 5-hour number no longer invents a 100%.</b> When the claude.ai fetch is blocked, the app falls back to estimating from your local logs, and that estimate was comparing your current session against itself, which always came out at exactly full. A fabricated 100% is worse than no number: it turned the ring red and froze Clawd as if you were out of budget. It now shows a dash when it genuinely does not know, and Clawd carries on walking.</li>
+                    <li><b>Costs were being read off a stale price list.</b> Every Opus was charged at the older $15/$75 rather than its real $5/$25, and Fable was missing from the list entirely, so it was quietly billed at Sonnet's rate. Each model now uses its own published rate, and cached tokens are priced by which cache they used. <b>Expect your totals to drop, in some cases by more than half.</b> Nothing was lost, the old figure was simply too high.</li>
+                    <li>A reset less than an hour away now reads "40m" instead of "0h 40m"</li>
+                </ul>
+                <p>The first and third were spotted by <a href="https://github.com/cenzihao1987-svg/claude-notch-zh-cn">Gerry Cen</a> in his fork. Thanks for the sharp eyes.</p>
+            ]]></description>
+            <pubDate>Mon, 07 Sep 2026 21:49:00 +0200</pubDate>
+            <sparkle:version>0.3.4</sparkle:version>
+            <sparkle:shortVersionString>0.3.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/stevemcqueenz/claude-notch-tracker/releases/download/v0.3.4/ClaudeNotch.zip" length="1785509" type="application/octet-stream" sparkle:edSignature="9Rb//GqZr2r3wzxxn+4Wcg0G8jPvxlc6JG/N7wCPJ9nPqKnFv7FMRPdrIPIaZYmCZN+QVod9IhMN/gWIFKH7Bg=="/>
+        </item>
+        <item>
             <title>0.3.3</title>
             <description><![CDATA[
                 <h2>A third provider, and a tidier menu</h2>
