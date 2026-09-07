@@ -20,6 +20,36 @@ import Foundation
         #expect(!snap.isEmpty)
     }
 
+    /// Regression: the fallback estimate used to divide the active block by a maximum that
+    /// included the active block itself, so a single block reported a fabricated 100% — which the
+    /// UI reads as "out of budget" (red ring, Clawd frozen) when nothing was actually measured.
+    @Test func singleBlockHasNoUsageEstimate() throws {
+        let store = UsageStore()
+        try store.ingest(fileURL: fixtureURL("dedup"))
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]
+        let snap = store.snapshot(now: f.date(from: "2026-07-03T10:30:00Z")!)
+        #expect(snap.blockUsageEstimate == nil)
+    }
+
+    /// With a completed block to compare against, the estimate is a real ratio.
+    @Test func estimateComparesAgainstCompletedBlock() throws {
+        let store = UsageStore()
+        try store.ingest(fileURL: fixtureURL("two-blocks"))
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]
+        let snap = store.snapshot(now: f.date(from: "2026-07-03T10:30:00Z")!)
+        // active 500K against a completed 1M block
+        #expect(snap.blockUsageEstimate == 0.5)
+    }
+
+    /// No active block means no current-block ratio to report.
+    @Test func expiredBlockHasNoUsageEstimate() throws {
+        let store = UsageStore()
+        try store.ingest(fileURL: fixtureURL("two-blocks"))
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]
+        let snap = store.snapshot(now: f.date(from: "2026-07-04T09:00:00Z")!)
+        #expect(snap.blockUsageEstimate == nil)
+    }
+
     @Test func emptyStoreIsEmptySnapshot() {
         let snap = UsageStore().snapshot(now: Date())
         #expect(snap.isEmpty)

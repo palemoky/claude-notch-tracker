@@ -66,7 +66,7 @@ final class AppModel {
     // MARK: display values (prefer live limits, then terminal feed, then estimate)
 
     private var claudeSessionUsage: Double? {
-        limits?.sessionPct ?? statuslineUsage ?? (snapshot.isEmpty ? nil : snapshot.blockUsageEstimate)
+        limits?.sessionPct ?? statuslineUsage ?? snapshot.blockUsageEstimate
     }
     var sessionUsage: Double? { activeProviderSnapshot.primaryUsage }
     var weeklyUsage: Double? { limits?.weeklyPct }

@@ -77,9 +77,15 @@ final class UsageStore {
 
         let blocks = BlockCalculator.blocks(from: events)
         let active = blocks.last.flatMap { $0.contains(now) ? $0 : nil }
-        let maxBlockTokens = blocks.map(\.totalTokens).max() ?? 0
-        let estimate = maxBlockTokens > 0
-            ? min(1, Double(active?.totalTokens ?? 0) / Double(maxBlockTokens)) : 0
+        // Compare the active block against the biggest COMPLETED one. Including the active
+        // block in that maximum makes it divide by itself whenever it is the largest, which on a
+        // two-day log window is most of the time and on a single block is always: a fabricated
+        // 100% that reads as "out of budget" when nothing was measured at all. With no completed
+        // block to compare against there is no honest answer, so say so with nil.
+        let baseline = blocks.filter { !$0.contains(now) }.map(\.totalTokens).max() ?? 0
+        let estimate: Double? = active.flatMap { block in
+            baseline > 0 ? min(1, Double(block.totalTokens) / Double(baseline)) : nil
+        }
 
         return UsageSnapshot(
             blockRemaining: active?.remaining(at: now),

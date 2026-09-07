@@ -24,9 +24,10 @@ struct UsageSnapshot: Equatable, Sendable {
     /// Projects worked in today with their spend, most-recently-active first (for the sessions list).
     var projectsToday: [ProjectUsage] = []
     var topModel: String?
-    /// Rough fallback usage (0…1): active-block tokens ÷ largest block ever seen.
-    /// Used only until the authoritative statusline rate-limit % is available.
-    var blockUsageEstimate: Double = 0
+    /// Rough fallback usage (0…1): active-block tokens against the biggest COMPLETED block.
+    /// nil when there is nothing honest to compare against, which the UI shows as a dash.
+    /// Used only until the authoritative account limits or statusline % are available.
+    var blockUsageEstimate: Double?
 
     var isEmpty: Bool { tokensToday == 0 && blockRemaining == nil }
 
