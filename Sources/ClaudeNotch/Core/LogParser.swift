@@ -19,6 +19,11 @@ enum LogParser {
         let output_tokens: Int?
         let cache_creation_input_tokens: Int?
         let cache_read_input_tokens: Int?
+        /// Present on newer logs: the same write total split by cache TTL.
+        let cache_creation: CacheCreation?
+    }
+    private struct CacheCreation: Decodable {
+        let ephemeral_1h_input_tokens: Int?
     }
     /// The "custom-title" line carries the conversation name shown in the Claude sidebar.
     private struct TitleLine: Decodable {
@@ -131,6 +136,7 @@ enum LogParser {
             inputTokens: usage.input_tokens ?? 0,
             outputTokens: usage.output_tokens ?? 0,
             cacheCreationTokens: usage.cache_creation_input_tokens ?? 0,
-            cacheReadTokens: usage.cache_read_input_tokens ?? 0)
+            cacheReadTokens: usage.cache_read_input_tokens ?? 0,
+            cacheCreation1hTokens: usage.cache_creation?.ephemeral_1h_input_tokens ?? 0)
     }
 }

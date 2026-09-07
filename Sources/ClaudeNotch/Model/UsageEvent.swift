@@ -12,6 +12,9 @@ struct UsageEvent: Equatable, Sendable {
     let outputTokens: Int
     let cacheCreationTokens: Int
     let cacheReadTokens: Int
+    /// The share of `cacheCreationTokens` written to the 1-hour cache, which costs 2x input
+    /// rather than 1.25x. Zero when the log predates the breakdown.
+    var cacheCreation1hTokens: Int = 0
 
     var totalTokens: Int {
         inputTokens + outputTokens + cacheCreationTokens + cacheReadTokens
