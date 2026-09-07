@@ -14,7 +14,9 @@ import Foundation
         let now = f.date(from: "2026-07-03T10:30:00Z")!
         let snap = store.snapshot(now: now)
         #expect(snap.tokensToday == 1_500_000)
-        #expect(abs(snap.costToday - 15.40) < 0.0001)
+        // 1M input on Opus 4.8 @ $5/M + 500K on Haiku 4.5 @ $1/M. Was $15.40 when the table
+        // priced all Opus at the retired $15/M and all Haiku at Haiku 3.5's $0.80/M.
+        #expect(abs(snap.costToday - 5.50) < 0.0001)
         #expect(snap.topModel == "claude-opus-4-8")
         #expect(snap.blockRemaining != nil)
         #expect(!snap.isEmpty)
