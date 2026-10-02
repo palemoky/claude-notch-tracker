@@ -188,7 +188,8 @@ enum DeepSeekSnapshotMapper {
             fetchedAt: now,
             statusMessage: balance.isAvailable ? nil : "Balance too low for API calls",
             pill: UsagePill(text: Fmt.compactMoney(balance.total, currency: currency), tint: pillTint),
-            currency: currency
+            currency: currency,
+            spendObservedAt: ledger.lastSpendAt
         )
     }
 

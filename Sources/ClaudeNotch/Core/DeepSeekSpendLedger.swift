@@ -18,6 +18,9 @@ struct DeepSeekSpendLedger: Codable, Equatable, Sendable {
     /// Local calendar day "yyyy-MM-dd" → amount spent that day.
     private(set) var spentByDay: [String: Double] = [:]
     private(set) var topUps: [TopUp] = []
+    /// The last reading that found the balance lower — what makes the whale spout. Optional, so
+    /// a ledger saved before it existed still decodes.
+    private(set) var lastSpendAt: Date?
 
     static let keptDays = 35
     static let keptTopUps = 10
@@ -33,6 +36,7 @@ struct DeepSeekSpendLedger: Codable, Equatable, Sendable {
             trackingSince = date
             spentByDay = [:]
             topUps = []
+            lastSpendAt = nil
             return
         }
         if trackingSince == nil { trackingSince = date }
@@ -40,6 +44,7 @@ struct DeepSeekSpendLedger: Codable, Equatable, Sendable {
             let delta = last - balance
             if delta > Self.epsilon {
                 spentByDay[Self.dayKey(date, calendar), default: 0] += delta
+                lastSpendAt = date
             } else if delta < -Self.epsilon {
                 topUps.append(TopUp(date: date, amount: -delta))
                 topUps = Array(topUps.suffix(Self.keptTopUps))
