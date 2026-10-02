@@ -16,7 +16,7 @@ enum DeepSeekKeyPrompt {
         }
         alert.informativeText = info
 
-        let field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
+        let field = EditableSecureField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
         field.placeholderString = hasStored ? "Saved — paste a new key to replace it" : "sk-…"
         alert.accessoryView = field
         alert.addButton(withTitle: "Save")
@@ -36,5 +36,27 @@ enum DeepSeekKeyPrompt {
         default:
             return
         }
+    }
+}
+
+/// ⌘V reaches a text field through the Edit menu's key equivalents, and an accessory app has no
+/// menu bar to carry them — so in a plain field here, pasting a key silently did nothing. The
+/// field answers the editing shortcuts itself instead.
+private final class EditableSecureField: NSSecureTextField {
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        guard event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+              let key = event.charactersIgnoringModifiers else {
+            return super.performKeyEquivalent(with: event)
+        }
+        let action: Selector? = switch key {
+        case "v": #selector(NSText.paste(_:))
+        case "a": #selector(NSText.selectAll(_:))
+        case "x": #selector(NSText.cut(_:))
+        case "c": #selector(NSText.copy(_:))
+        case "z": Selector(("undo:"))
+        default: nil
+        }
+        if let action, NSApp.sendAction(action, to: nil, from: self) { return true }
+        return super.performKeyEquivalent(with: event)
     }
 }
