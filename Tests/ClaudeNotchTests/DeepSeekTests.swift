@@ -148,6 +148,26 @@ private let holidays = ChineseHolidayCalendar.empty.merging(holidayCNJSON: holid
         #expect(ledger.currency == "USD")
     }
 
+    /// What makes the whale spout: the last reading that found the balance lower — not a top-up,
+    /// and not a reading on another wallet.
+    @Test func remembersWhenMoneyLastLeft() {
+        var ledger = DeepSeekSpendLedger()
+        ledger.record(balance: 10, currency: "CNY", at: utc("2026-09-14T01:00:00Z"), calendar: calendar)
+        #expect(ledger.lastSpendAt == nil)
+        ledger.record(balance: 9, currency: "CNY", at: utc("2026-09-14T02:00:00Z"), calendar: calendar)
+        ledger.record(balance: 20, currency: "CNY", at: utc("2026-09-14T03:00:00Z"), calendar: calendar)
+        #expect(ledger.lastSpendAt == utc("2026-09-14T02:00:00Z"))
+        ledger.record(balance: 5, currency: "USD", at: utc("2026-09-14T04:00:00Z"), calendar: calendar)
+        #expect(ledger.lastSpendAt == nil)
+    }
+
+    @Test func aLedgerSavedBeforeTheSpoutStillDecodes() throws {
+        let saved = #"{"currency":"CNY","lastBalance":3.27,"spentByDay":{},"topUps":[]}"#
+        let ledger = try JSONDecoder().decode(DeepSeekSpendLedger.self, from: Data(saved.utf8))
+        #expect(ledger.lastBalance == 3.27)
+        #expect(ledger.lastSpendAt == nil)
+    }
+
     @Test func survivesARelaunch() throws {
         var ledger = DeepSeekSpendLedger()
         ledger.record(balance: 10, currency: "CNY", at: utc("2026-09-14T01:00:00Z"), calendar: calendar)

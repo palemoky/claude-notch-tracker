@@ -167,17 +167,22 @@ struct IslandView: View {
     private var notchRow: some View {
         HStack(spacing: 0) {
             providerIcon
+                .frame(width: iconSize, height: iconSize)
+                .modifier(WhaleSpoutTrigger(
+                    observedAt: model.selectedProvider == .deepseek ? provider.spendObservedAt : nil,
+                    active: model.animateIcon && !model.isPaused,
+                    iconSize: iconSize))
                 .id(model.selectedProvider)          // cross-fades on a provider switch
                 .transition(.opacity)
-                .frame(width: iconSize, height: iconSize)
                 .frame(width: wing, height: closedH)
                 .contentShape(Rectangle())
                 // Tap cycles the providers this Mac has. With only one it cycles Clawd's look
                 // instead, which is what the click did before there was more than one provider.
                 .onTapGesture { model.cycleProvider() }
-                .help(model.iconClickSwitchesProvider
-                      ? "Click to switch provider"
-                      : "Click to change the icon")
+                .help((model.iconClickSwitchesProvider
+                       ? "Click to switch provider"
+                       : "Click to change the icon")
+                      + (model.selectedProvider == .deepseek ? " · spouts when your balance drops" : ""))
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(model.iconClickSwitchesProvider ? "Switch provider" : "Change icon")
                 .accessibilityValue(model.selectedProvider.displayName)

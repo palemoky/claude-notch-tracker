@@ -116,6 +116,9 @@ struct ProviderUsageSnapshot: Equatable, Sendable {
     var pill: UsagePill?
     /// ISO code for every money figure in this snapshot; nil = USD (Claude's local logs).
     var currency: String?
+    /// When money was last seen leaving the account (DeepSeek's balance dropping); the icon
+    /// reacts to a recent one.
+    var spendObservedAt: Date?
 
     /// The headline fraction for the collapsed pill: the FIRST limit's value, nil when that limit
     /// has no value yet. Deliberately not "first non-nil" — falling through to a later limit would
