@@ -129,6 +129,41 @@ triggers an immediate refresh.
 - The app is not sandboxed because its core features require read-only access to browser session
   stores, Claude Code logs, and the locally installed Codex executable.
 
+## DeepSeek
+
+DeepSeek's API has a balance endpoint and nothing else about usage, so that is all the provider
+asks for:
+
+```
+GET https://api.deepseek.com/user/balance   (Authorization: Bearer <key>)
+```
+
+- **The key** comes from `DEEPSEEK_API_KEY` in the app's environment, or from the right-click
+  menu's *DeepSeek API Key…*, which stores it as a generic password in the login Keychain. It is
+  read once per launch and sent nowhere but api.deepseek.com. The provider is offered only once a
+  key exists, which `ProviderAvailability` learns from a flag rather than a Keychain read.
+- **The wallet** shown is the funded one: an account can hold a CNY and a USD wallet, usually
+  with one empty, and the first listed is not always the one with money in it.
+- **Spend** is observed, not reported: `DeepSeekSpendLedger` counts each fall in the balance
+  between readings as spend on the day it was seen, and each rise as a top-up, never netted
+  against spend. Time the app wasn't running lands on the next reading's day.
+- **Peak and off-peak** follow DeepSeek's published rule: 09:00–12:00 and 14:00–18:00 Beijing
+  time, Monday to Friday, excluding Chinese statutory holidays. The holiday dates ship for the
+  current year (`holiday-cn-<year>.json`) and are refreshed once a day from
+  [holiday-cn](https://github.com/NateScarlet/holiday-cn) over jsDelivr, so a new year's
+  arrangement arrives without a release. A year with no data falls back to the weekday rule.
+
+DeepSeek has no limit window, so instead of a percent ring the pill shows the balance and a dot
+for the phase: green off-peak, amber at peak, red when the balance is too low for API calls.
+
+## Rotation
+
+*Rotate providers* in the right-click menu switches the island to the next available provider
+every 10 s, 30 s or minute. While it is on, every available provider is polled in the
+background (normally only the one on screen is), so a switch never lands on a stale or empty
+card. Rotation holds while the card is open, and a provider picked by hand gets a full interval.
+Rotated-to providers are not saved as the choice; the saved one is still what the user picked.
+
 ## Validation
 
 Run the full test suite:

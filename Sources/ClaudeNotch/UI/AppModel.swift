@@ -6,6 +6,7 @@ final class AppModel {
     private(set) var snapshot: UsageSnapshot = .empty
     private(set) var codexSnapshot: ProviderUsageSnapshot = .unavailable(.codex)
     private(set) var antigravitySnapshot: ProviderUsageSnapshot = .unavailable(.antigravity)
+    private(set) var deepseekSnapshot: ProviderUsageSnapshot = .unavailable(.deepseek)
     /// The stored choice, or Claude. Note this is the *saved* preference: `start()` may show a
     /// different provider when the saved one isn't installed, without overwriting this, so the
     /// choice comes back if the tool is reinstalled.
@@ -14,7 +15,14 @@ final class AppModel {
     ) ?? .claude
     /// Projects worked in today with their spend (from the logs), most-recently-active first.
     var sessionsToday: [ProjectUsage] { snapshot.projectsToday }
-    var isExpanded = false
+    var isExpanded = false {
+        // Rotation holds still while the card is open, and the provider on screen gets a full
+        // interval once it closes rather than switching the instant it does.
+        didSet { if oldValue && !isExpanded { restartRotation() } }
+    }
+    /// Seconds between automatic provider switches; 0 = off. Persisted; default off.
+    private(set) var rotationInterval: Int = UserDefaults.standard.integer(forKey: "rotationInterval")
+    static let rotationChoices = [0, 10, 30, 60]
     var isPaused = false
     var claudeRunning = false
     var avatarStyle: AvatarStyle = AvatarStyle.selected
@@ -48,12 +56,14 @@ final class AppModel {
     private let claudeAPI = ClaudeAPIService()
     private let codexProvider = CodexUsageProvider()
     private let antigravityProvider = AntigravityUsageProvider()
+    private let deepseekProvider = DeepSeekUsageProvider()
     private let lifetimeScanner = LifetimeScanner()
     private var watcher: LogWatcher?
     private var ticker: Timer?
     private var limitsTimer: Timer?
     private var providerTimer: Timer?
     private var lifetimeTimer: Timer?
+    private var rotationTimer: Timer?
     /// mtime of each log file the last time we parsed it, so the periodic sweep re-reads only
     /// files that actually grew and skips the rest.
     private var parsedMTimes: [URL: Date] = [:]
@@ -112,12 +122,16 @@ final class AppModel {
         case .claude: max(claudeSessionUsage ?? 0, weeklyUsage ?? 0)
         case .codex: codexSnapshot.maximumUsage
         case .antigravity: antigravitySnapshot.maximumUsage
+        // No limit to run into: peak hours, which bill double, are what quicken the icon.
+        case .deepseek: deepseekSnapshot.pill?.tint == .warn ? 0.6 : 0
         }
     }
 
     /// A limit (5-hour or 7-day) is used up — there's nothing left to spend, so Clawd stops
     /// walking and stands still rather than sprinting at max speed.
-    var isAtLimit: Bool { iconUrgency >= 0.999 }
+    var isAtLimit: Bool {
+        selectedProvider == .deepseek ? deepseekSnapshot.pill?.tint == .critical : iconUrgency >= 0.999
+    }
 
     /// Projected end-of-day cost if today keeps up its average spend rate so far. nil before any
     /// spend, or too early in the day for the extrapolation to mean anything.
@@ -159,6 +173,7 @@ final class AppModel {
         case .claude: snapshot = claudeProviderSnapshot
         case .codex: snapshot = codexSnapshot
         case .antigravity: snapshot = antigravitySnapshot
+        case .deepseek: snapshot = deepseekSnapshot
         }
         // Picking a provider that isn't installed is a setup state, not a failure: say what to do
         // instead of showing the raw "executable not found" in warning amber.
@@ -268,6 +283,7 @@ final class AppModel {
             Task { @MainActor in
                 self?.fetchCodexUsage()
                 self?.fetchAntigravityUsage()
+                self?.fetchDeepSeekUsage()
             }
         }
         Task.detached(priority: .utility) { [weak self] in
@@ -277,7 +293,9 @@ final class AppModel {
         fetchLimits()
         fetchCodexUsage()
         fetchAntigravityUsage()
+        fetchDeepSeekUsage()
         scanLifetime()
+        restartRotation()
         lifetimeTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.scanLifetime() }
         }
@@ -299,6 +317,7 @@ final class AppModel {
         case .claude: fetchLimits(force: true)   // re-read the session, e.g. after a re-login
         case .codex: fetchCodexUsage()
         case .antigravity: fetchAntigravityUsage(force: true)
+        case .deepseek: fetchDeepSeekUsage()
         }
     }
 
@@ -309,31 +328,89 @@ final class AppModel {
             fetchLimits()
             fetchCodexUsage()
             fetchAntigravityUsage()
+            fetchDeepSeekUsage()
         }
     }
     func selectProvider(_ provider: UsageProviderID) {
-        selectedProvider = provider
         UserDefaults.standard.set(provider.rawValue, forKey: "selectedProvider")
+        show(provider)
+        restartRotation()   // a choice made by hand gets a full interval on screen
+    }
+
+    /// Puts a provider on screen without saving it as the choice — what rotation does, so the
+    /// saved provider is still the one the user picked.
+    private func show(_ provider: UsageProviderID) {
+        selectedProvider = provider
+        // Rotating providers are already polled in the background; this is only for the rest.
+        guard !isRotating else { return }
         switch provider {
         case .claude: fetchLimits()
         case .codex: fetchCodexUsage()
         case .antigravity: fetchAntigravityUsage()
+        case .deepseek: fetchDeepSeekUsage()
         }
+    }
+
+    // MARK: rotation
+
+    /// Rotation is on and there is something to rotate between.
+    var isRotating: Bool { rotationInterval > 0 && ProviderAvailability.available().count > 1 }
+
+    func setRotationInterval(_ seconds: Int) {
+        rotationInterval = seconds
+        UserDefaults.standard.set(seconds, forKey: "rotationInterval")
+        restartRotation()
+        // Bring every rotating provider up to date now, rather than one poll after it appears.
+        if isRotating {
+            fetchLimits()
+            fetchCodexUsage()
+            fetchAntigravityUsage()
+            fetchDeepSeekUsage()
+        }
+    }
+
+    private func restartRotation() {
+        rotationTimer?.invalidate()
+        rotationTimer = nil
+        guard rotationInterval > 0 else { return }
+        rotationTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(rotationInterval),
+                                             repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.rotate() }
+        }
+    }
+
+    private func rotate() {
+        guard isRotating, !isExpanded, !isPaused,
+              let next = Self.provider(after: selectedProvider,
+                                       in: ProviderAvailability.available()) else { return }
+        show(next)
+    }
+
+    /// The one after `current`, wrapping; the first when `current` isn't among them; nil when
+    /// there is nothing else to switch to.
+    nonisolated static func provider(after current: UsageProviderID,
+                                     in providers: [UsageProviderID]) -> UsageProviderID? {
+        guard providers.count > 1 else { return nil }
+        guard let index = providers.firstIndex(of: current) else { return providers.first }
+        return providers[(index + 1) % providers.count]
+    }
+
+    /// Whether a provider is fetched: the one on screen, plus every rotating one so a switch never
+    /// lands on a stale or empty card. Everything else stays unpolled, as before rotation.
+    private func isPolled(_ provider: UsageProviderID) -> Bool {
+        selectedProvider == provider
+            || (isRotating && ProviderAvailability.isAvailable(provider))
     }
     /// Icon click. Cycles the providers this Mac actually has, so the click can't land on a tool
     /// that isn't installed. With only one such provider there is nothing to switch between, so
     /// the click returns to its original meaning and cycles Clawd's look instead.
     func cycleProvider() {
-        let providers = ProviderAvailability.available()
-        guard providers.count > 1 else {
+        guard let next = Self.provider(after: selectedProvider,
+                                       in: ProviderAvailability.available()) else {
             if selectedProvider == .claude { cycleAvatar() }
             return
         }
-        guard let index = providers.firstIndex(of: selectedProvider) else {
-            selectProvider(providers[0])
-            return
-        }
-        selectProvider(providers[(index + 1) % providers.count])
+        selectProvider(next)
     }
 
     /// What the icon click will do, for the tooltip and the accessibility hint.
@@ -353,23 +430,46 @@ final class AppModel {
     /// Only replaces the last-known-good limits with a response that actually carries a
     /// session %, so a partial/failed read can never clobber correct data.
     func fetchLimits(force: Bool = false) {
-        guard !isPaused, selectedProvider == .claude else { return }
+        guard !isPaused, isPolled(.claude) else { return }
         Task { [claudeAPI] in
             if let l = await claudeAPI.fetch(force: force), l.sessionPct != nil { self.applyLimits(l) }
         }
     }
 
     func fetchCodexUsage() {
-        guard !isPaused, selectedProvider == .codex else { return }
+        guard !isPaused, isPolled(.codex) else { return }
         Task { [codexProvider] in
             self.codexSnapshot = await codexProvider.fetch()
         }
     }
 
     func fetchAntigravityUsage(force: Bool = false) {
-        guard !isPaused, selectedProvider == .antigravity else { return }
+        guard !isPaused, isPolled(.antigravity) else { return }
         Task { [antigravityProvider] in
             self.antigravitySnapshot = await antigravityProvider.fetch(force: force)
+        }
+    }
+
+    func fetchDeepSeekUsage() {
+        guard !isPaused, isPolled(.deepseek) else { return }
+        Task { [deepseekProvider] in
+            self.deepseekSnapshot = await deepseekProvider.fetch()
+        }
+    }
+
+    /// After the key is set or removed from the menu: re-detect, re-read the key, refetch.
+    func deepSeekCredentialsChanged() {
+        ProviderAvailability.invalidate()
+        Task { [deepseekProvider] in
+            await deepseekProvider.resetCredentials()
+            if DeepSeekCredentials.isConfigured {
+                self.selectProvider(.deepseek)
+            } else {
+                self.deepseekSnapshot = .unavailable(.deepseek)
+                if self.selectedProvider == .deepseek, let first = ProviderAvailability.available().first {
+                    self.selectProvider(first)
+                }
+            }
         }
     }
 
