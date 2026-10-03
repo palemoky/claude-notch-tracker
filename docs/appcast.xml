@@ -21,8 +21,8 @@
             <sparkle:shortVersionString>0.4.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <!-- Filled in at release time: length + edSignature come from the signed zip (sign_update). -->
-            <enclosure url="https://github.com/stevemcqueenz/claude-notch-tracker/releases/download/v0.4.0/ClaudeNotch.zip" length="0" type="application/octet-stream" sparkle:edSignature="TODO"/>
+            <!-- Filled at release time from sign_update. -->
+            <enclosure url="https://github.com/stevemcqueenz/claude-notch-tracker/releases/download/v0.4.0/ClaudeNotch.zip" length="2009025" type="application/octet-stream" sparkle:edSignature="MhzPzD//jxgU8AfixzHCfyIwVKoqKjYq8tU+DA1TGnWIBPHwaNGvZ0AqldSzzyzAaff665eVLADQp2FNUnXvDg=="/>
         </item>
         <item>
             <title>0.3.4</title>
