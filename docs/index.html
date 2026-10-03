@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Notch — AI usage at a glance</title>
+<meta name="description" content="Live Claude, Codex, Antigravity, DeepSeek and opencode-go usage in your Mac's notch: limits, resets, tokens, and cost.">
+<style>
+:root {
+  --bg: #141210; --panel: #1e1b18; --ink: #f2ede6; --muted: rgba(242,237,230,.55);
+  --faint: rgba(242,237,230,.32); --clay: #d97756; --teal: #5cc9a7; --amber: #f0a826;
+  --line: rgba(242,237,230,.12); --radius: 18px;
+}
+* { box-sizing: border-box; margin: 0; }
+body { background: var(--bg); color: var(--ink);
+  font: 16px/1.6 -apple-system, "SF Pro Text", Inter, "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+/* notch bar */
+.notchbar { display: flex; justify-content: center; padding: 18px 0 0; }
+.notch { background: #000; border-radius: 0 0 22px 22px; padding: 10px 28px;
+  display: flex; gap: 14px; align-items: center; font-size: 14px; font-weight: 600;
+  box-shadow: 0 8px 40px rgba(0,0,0,.6); }
+.notch .crab { font-size: 20px; }
+.notch .pct { font-variant-numeric: tabular-nums; }
+.notch .ring { width: 14px; height: 14px; border-radius: 50%;
+  border: 3px solid var(--teal); border-top-color: rgba(255,255,255,.18); }
+/* hero */
+.hero { text-align: center; padding: 72px 0 40px; }
+.hero h1 { font-size: clamp(40px, 7vw, 64px); letter-spacing: -.02em; line-height: 1.05; }
+.hero h1 .crab { font-size: .9em; }
+.hero p.tag { color: var(--muted); font-size: 20px; margin: 16px 0 28px; }
+.btn { display: inline-block; background: var(--clay); color: #161310; font-weight: 700;
+  padding: 13px 30px; border-radius: 999px; text-decoration: none; font-size: 17px; }
+.btn:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); margin-left: 10px; }
+.fine { color: var(--faint); font-size: 13px; margin-top: 14px; }
+/* demo */
+.demo { text-align: center; padding: 24px 0 56px; }
+.demo img { max-width: 100%; border-radius: var(--radius); border: 1px solid var(--line); }
+/* shots */
+.shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px; padding-bottom: 64px; }
+.shot { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  overflow: hidden; }
+.shot img { width: 100%; display: block; }
+.shot p { padding: 12px 16px 16px; color: var(--muted); font-size: 14px; }
+.shot p b { color: var(--ink); }
+/* features */
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px; padding-bottom: 64px; }
+.feat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 20px; }
+.feat h3 { font-size: 17px; margin-bottom: 6px; }
+.feat p { color: var(--muted); font-size: 14px; }
+/* providers */
+.providers { padding-bottom: 64px; }
+.providers table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.providers th, .providers td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.providers th { color: var(--faint); font-weight: 600; font-size: 13px; text-transform: uppercase; }
+.providers td:last-child { color: var(--muted); }
+/* install */
+.install { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 28px; margin-bottom: 64px; }
+.install h2 { margin-bottom: 12px; }
+.install ol { margin-left: 20px; color: var(--muted); }
+.install code { background: #000; padding: 2px 8px; border-radius: 6px; font-size: 14px;
+  color: var(--ink); }
+.install pre { background: #000; border-radius: 10px; padding: 14px 16px; margin-top: 12px;
+  overflow-x: auto; font-size: 14px; }
+footer { text-align: center; color: var(--faint); font-size: 13px; padding: 0 0 48px; }
+footer a { color: var(--muted); }
+h2.section { font-size: 28px; letter-spacing: -.01em; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+<div class="notchbar"><div class="notch"><span class="crab">🦀</span><span class="pct">42%</span><span class="ring"></span></div></div>
+<div class="wrap">
+  <div class="hero">
+    <h1><span class="crab">🦀</span> Claude Notch</h1>
+    <p class="tag">AI usage at a glance — live limits in your Mac's notch.</p>
+    <p>
+      <a class="btn" href="https://github.com/stevemcqueenz/claude-notch-tracker/releases/latest">Download for macOS</a>
+      <a class="btn ghost" href="https://github.com/stevemcqueenz/claude-notch-tracker">GitHub</a>
+    </p>
+    <p class="fine">macOS 14+ · Apple Silicon &amp; Intel · signed &amp; notarized · MIT</p>
+  </div>
+  <div class="demo"><img src="demo.gif" alt="Claude Notch: click to expand, swipe pages, switch providers"></div>
+
+  <h2 class="section">One island, every provider</h2>
+  <div class="shots">
+    <div class="shot"><img src="page-limits.png" alt="Limits page"><p><b>Limits</b> — 5-hour, 7-day, weekly caps plus today's cost</p></div>
+    <div class="shot"><img src="page-sessions.png" alt="Sessions page"><p><b>Week + sessions</b> — 7 days of spend, live conversations</p></div>
+    <div class="shot"><img src="page-alltime.png" alt="All-time top projects"><p><b>All-time</b> — your biggest projects ever</p></div>
+    <div class="shot"><img src="codex-limits.png" alt="Codex limits"><p><b>Codex</b> — rate windows + 7-day tokens</p></div>
+    <div class="shot"><img src="codex-tasks.png" alt="Codex tasks"><p><b>Tasks</b> — account totals + recent work</p></div>
+    <div class="shot"><img src="settings.png" alt="Settings menu"><p><b>Settings</b> — right-click the island</p></div>
+  </div>
+
+  <h2 class="section">Why you'll keep it</h2>
+  <div class="features">
+    <div class="feat"><h3>📊 Real limit tiles</h3><p>The same bars the official apps show — 5-hour, 7-day, weekly caps — each with a reset countdown and urgency colour.</p></div>
+    <div class="feat"><h3>🔄 Five providers, one click</h3><p>Claude, Codex, Antigravity, DeepSeek and opencode-go. Click the icon to cycle; only installed ones appear.</p></div>
+    <div class="feat"><h3>🦀 Clawd the crab</h3><p>He quickens as you approach a limit and freezes when you're out. Mono and Spark looks included.</p></div>
+    <div class="feat"><h3>🔒 Local-first</h3><p>Reads your local sessions and talks only to first-party services. No analytics, no third-party servers.</p></div>
+    <div class="feat"><h3>🌙 Hide in full screen</h3><p>Optionally tucks into the notch while movies and video own the display.</p></div>
+    <div class="feat"><h3>✨ Zero fuss</h3><p>No Dock icon, no menu-bar clutter. Draws its own notch on non-notch Macs, updates itself.</p></div>
+  </div>
+
+  <h2 class="section">Providers</h2>
+  <div class="providers"><table>
+    <tr><th>Provider</th><th>What you see</th></tr>
+    <tr><td>Claude</td><td>5-hour, 7-day + Fable limits, credits, local cost, sessions</td></tr>
+    <tr><td>Codex</td><td>Rate-limit windows, token totals, credits, recent tasks</td></tr>
+    <tr><td>Antigravity</td><td>Quota windows, tokens, models, projects, week chart</td></tr>
+    <tr><td>DeepSeek</td><td>Balance, peak/off-peak phase, observed spend</td></tr>
+    <tr><td>opencode-go</td><td>5-hour / weekly / monthly meters, renewals, sessions</td></tr>
+  </table></div>
+
+  <div class="install">
+    <h2>Install in a minute</h2>
+    <ol>
+      <li>Download <code>Claude Notch.zip</code> from <a href="https://github.com/stevemcqueenz/claude-notch-tracker/releases/latest">Releases</a>, drag to Applications.</li>
+      <li>Double-click to open. On the Keychain prompt, choose <b>Always Allow</b> so it can read your local session.</li>
+      <li>Right-click the island → <i>Launch at Login</i> to keep it around.</li>
+    </ol>
+    <pre>git clone https://github.com/stevemcqueenz/claude-notch-tracker
+cd claude-notch-tracker
+swift run ClaudeNotch   # needs full Xcode</pre>
+  </div>
+
+  <footer>MIT · <a href="https://github.com/stevemcqueenz/claude-notch-tracker">stevemcqueenz/claude-notch-tracker</a> · Clawd © Mick Cesanek</footer>
+</div>
+</body>
+</html>
