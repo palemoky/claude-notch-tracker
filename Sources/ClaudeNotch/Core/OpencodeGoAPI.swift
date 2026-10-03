@@ -247,7 +247,7 @@ actor OpencodeGoAPI {
         guard let access = accessValue as? [String: Any],
               let meters = access["meters"] as? [String: Any],
               let fiveHour = meters["fiveHour"] as? [String: Any],
-              percent(from: fiveHour) != nil else {
+              meter(from: fiveHour).percent != nil else {
             throw OpencodeGoAPIError.parseFailed("Invalid Console usage payload.")
         }
         let endsAt = date(from: access["endsAt"])
@@ -271,7 +271,7 @@ actor OpencodeGoAPI {
               let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let usage = root["usage"] as? [String: Any],
               let rolling = usage["rolling"] as? [String: Any],
-              percent(from: rolling) != nil else {
+              meter(from: rolling).percent != nil else {
             throw OpencodeGoAPIError.parseFailed("Missing usage fields.")
         }
         let renewsAt = date(from: usage["renewsAt"]) ?? date(from: usage["renewAt"])
@@ -297,36 +297,63 @@ actor OpencodeGoAPI {
     private static func makeSnapshot(session: [String: Any], weekly: [String: Any]?,
                                      monthly: [String: Any]?, renewsAt: Date?,
                                      source: String, now: Date) -> ProviderUsageSnapshot {
-        ProviderUsageSnapshot(
+        let sessionMeter = meter(from: session)
+        let weeklyMeter = meter(from: weekly)
+        let monthlyMeter = meter(from: monthly)
+        var stats: [UsageStatMetric] = []
+        if let renewsAt {
+            stats.append(UsageStatMetric(id: "renews", label: "Renews",
+                                         value: Fmt.until(renewsAt), subtitle: nil))
+        }
+        return ProviderUsageSnapshot(
             provider: .opencodeGo,
             limits: [
                 UsageLimitMetric(id: "opencode-session", label: "5-Hour",
-                                 usedFraction: fraction(percent(from: session)),
-                                 resetsAt: resetDate(from: session, now: now)),
+                                 usedFraction: fraction(sessionMeter.percent),
+                                 resetsAt: resetDate(from: session, now: now),
+                                 subtitle: spendSubtitle(sessionMeter)),
                 UsageLimitMetric(id: "opencode-weekly", label: "7-Day",
-                                 usedFraction: fraction(percent(from: weekly)),
-                                 resetsAt: resetDate(from: weekly, now: now)),
+                                 usedFraction: fraction(weeklyMeter.percent),
+                                 resetsAt: resetDate(from: weekly, now: now),
+                                 subtitle: spendSubtitle(weeklyMeter)),
                 UsageLimitMetric(id: "opencode-monthly", label: "Monthly",
-                                 usedFraction: fraction(percent(from: monthly)),
-                                 resetsAt: resetDate(from: monthly, now: now)),
+                                 usedFraction: fraction(monthlyMeter.percent),
+                                 resetsAt: resetDate(from: monthly, now: now),
+                                 subtitle: spendSubtitle(monthlyMeter)),
             ],
+            stats: stats,
             renewsAt: renewsAt,
             source: source,
             fetchedAt: now)
     }
 
-    private static func percent(from meter: [String: Any]?) -> Double? {
-        guard let meter else { return nil }
+    /// A window's used / limit in dollars, e.g. "$3.00 of $12.00"; nil when only a percent is known.
+    private static func spendSubtitle(_ meter: ParsedMeter) -> String? {
+        guard let used = meter.used, let limit = meter.limit else { return nil }
+        return "\(Fmt.usd(used)) of \(Fmt.usd(limit))"
+    }
+
+    /// A meter's percent plus, when the console sends micro-cent amounts, the dollars behind it.
+    private struct ParsedMeter {
+        let percent: Double?
+        let used: Double?      // USD
+        let limit: Double?     // USD
+    }
+
+    private static func meter(from raw: [String: Any]?) -> ParsedMeter {
+        guard let raw else { return ParsedMeter(percent: nil, used: nil, limit: nil) }
+        var percent: Double?
         for key in ["usagePercent", "usedPercent", "percentUsed", "percent",
                     "usage_percent", "used_percent", "utilizationPercent", "utilization"] {
-            if let value = double(meter[key]) { return min(100, max(0, value)) }
+            if let value = double(raw[key]) { percent = min(100, max(0, value)); break }
         }
+        let used = double(raw["usedMicroCents"]).map { $0 / 100_000_000 }
+        let limit = double(raw["limitMicroCents"]).map { $0 / 100_000_000 }
         // The console's micro-cent meters: usage / limit as a percentage.
-        if let used = double(meter["usedMicroCents"]),
-           let limit = double(meter["limitMicroCents"]), limit > 0 {
-            return min(100, max(0, used / limit * 100))
+        if percent == nil, let used, let limit, limit > 0 {
+            percent = min(100, max(0, used / limit * 100))
         }
-        return nil
+        return ParsedMeter(percent: percent, used: used, limit: limit)
     }
 
     private static func fraction(_ percent: Double?) -> Double? { percent.map { $0 / 100 } }

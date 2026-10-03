@@ -110,6 +110,74 @@ import Testing
 
         let snapshot = try OpencodeGoLocalUsage.fetch(databaseURL: database, now: now)
         #expect(snapshot.limits.first?.usedFraction == 0.5)
+        // V1 has no title here, so the session falls back to the project folder's basename.
+        #expect(snapshot.sessions.first?.name == "v1proj")
+    }
+
+    @Test func v2SessionsAndTopModelComeFromTheSessionTable() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("opencode-go-v2-sessions-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let database = root.appendingPathComponent("opencode.db")
+        let createdMs = Int64((now.timeIntervalSince1970 - 60) * 1000)
+        try Self.writeV2Fixture(at: database, createdMs: createdMs)
+
+        let snapshot = try OpencodeGoLocalUsage.fetch(databaseURL: database, now: now)
+        #expect(snapshot.sessions.count == 1)
+        #expect(snapshot.sessions.first?.name == "Refactor the parser")
+        #expect(abs((snapshot.sessions.first?.cost ?? 0) - 6) < 0.0001)
+        #expect(snapshot.stats.first { $0.id == "top-model" }?.value == "qwen3.8-flash")
+    }
+
+    @Test func v2RowsWithoutCostOrModelStillCount() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("opencode-go-v2-bare-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let database = root.appendingPathComponent("opencode.db")
+        let createdMs = Int64((now.timeIntervalSince1970 - 60) * 1000)
+        var db: OpaquePointer?
+        guard sqlite3_open(database.path, &db) == SQLITE_OK else {
+            sqlite3_close(db)
+            throw OpencodeGoLocalUsageError.historyUnavailable("fixture open failed")
+        }
+        defer { sqlite3_close(db) }
+        // A quota error: the provider matches but there is no cost or model id.
+        let data = "{\"time\":{\"created\":\(createdMs)},\"model\":{\"providerID\":\"opencode-go\"}}"
+        let sql = """
+            CREATE TABLE session_message (
+              id TEXT PRIMARY KEY, session_id TEXT NOT NULL, type TEXT NOT NULL,
+              seq INTEGER NOT NULL, time_created INTEGER NOT NULL,
+              time_updated INTEGER NOT NULL, data TEXT NOT NULL);
+            INSERT INTO session_message VALUES ('m1','s1','assistant',1,\(createdMs),\(createdMs),'\(data)');
+            """
+        guard sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK else {
+            throw OpencodeGoLocalUsageError.historyUnavailable("fixture write failed")
+        }
+
+        let snapshot = try OpencodeGoLocalUsage.fetch(databaseURL: database, now: now)
+        #expect(snapshot.limits.first?.usedFraction == 0)
+        #expect(snapshot.sessions.count == 1)
+        #expect(snapshot.sessions.first?.cost == 0)
+        #expect(snapshot.stats.contains { $0.id == "top-model" } == false)
+    }
+
+    @Test func sessionsLeftIsNilWhenNothingIsBurning() {
+        let flat = [OpencodeGoLocalUsage.Row(at: now.addingTimeInterval(-3600), cost: 0)]
+        #expect(OpencodeGoLocalUsage.sessionsLeft(rows: flat, now: now) == nil)
+        // A $6 call that already rolled out of the 5-hour window: no current slope to trust.
+        let stale = [OpencodeGoLocalUsage.Row(at: now.addingTimeInterval(-6 * 3600), cost: 6)]
+        #expect(OpencodeGoLocalUsage.sessionsLeft(rows: stale, now: now) == nil)
+    }
+
+    @Test func sessionsLeftCountsTheWeeklyReserveWhenBurning() {
+        // $6 burned over the last hour: on pace to exhaust the $12 window before it resets, so
+        // each remaining session is a full one. Weekly $30 - $6 = $24 -> two $12 sessions.
+        let rows = [OpencodeGoLocalUsage.Row(at: now.addingTimeInterval(-3600), cost: 6)]
+        #expect(OpencodeGoLocalUsage.sessionsLeft(rows: rows, now: now) == 2)
     }
 
     @Test func missingDatabaseIsNotDetected() {
@@ -134,10 +202,13 @@ import Testing
         let theirs = "{\"time\":{\"created\":\(createdMs)},\"cost\":999,"
             + "\"model\":{\"id\":\"qwen3.5-9b\",\"providerID\":\"ollama\"}}"
         let sql = """
+            CREATE TABLE session_v2 (
+              id TEXT PRIMARY KEY, directory TEXT NOT NULL DEFAULT '', title TEXT NOT NULL DEFAULT '');
             CREATE TABLE session_message (
               id TEXT PRIMARY KEY, session_id TEXT NOT NULL, type TEXT NOT NULL,
               seq INTEGER NOT NULL, time_created INTEGER NOT NULL,
               time_updated INTEGER NOT NULL, data TEXT NOT NULL);
+            INSERT INTO session_v2 VALUES ('s1', '/home/agent/work/thing', 'Refactor the parser');
             INSERT INTO session_message VALUES ('m1', 's1', 'assistant', 1, \(createdMs), \(createdMs), '\(ours)');
             INSERT INTO session_message VALUES ('m2', 's1', 'assistant', 2, \(createdMs), \(createdMs), '\(theirs)');
             """
@@ -156,10 +227,12 @@ import Testing
         defer { sqlite3_close(database) }
 
         let data = "{\"time\":{\"created\":\(createdMs)},\"cost\":\(cost),"
-            + "\"providerID\":\"opencode-go\",\"role\":\"assistant\"}"
+            + "\"providerID\":\"opencode-go\",\"role\":\"assistant\",\"modelID\":\"kimi-k2.5\"}"
         let sql = """
-            CREATE TABLE message (id TEXT PRIMARY KEY, time_created INTEGER NOT NULL, data TEXT NOT NULL);
-            INSERT INTO message (id, time_created, data) VALUES ('message-1', \(createdMs), '\(data)');
+            CREATE TABLE session (id TEXT PRIMARY KEY, directory TEXT NOT NULL DEFAULT '', title TEXT NOT NULL DEFAULT '');
+            CREATE TABLE message (id TEXT PRIMARY KEY, session_id TEXT, time_created INTEGER NOT NULL, data TEXT NOT NULL);
+            INSERT INTO session VALUES ('s1', '/home/agent/work/v1proj', '');
+            INSERT INTO message (id, session_id, time_created, data) VALUES ('message-1', 's1', \(createdMs), '\(data)');
             """
         guard sqlite3_exec(database, sql, nil, nil, nil) == SQLITE_OK else {
             throw OpencodeGoLocalUsageError.historyUnavailable("fixture write failed")

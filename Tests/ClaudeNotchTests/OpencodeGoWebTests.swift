@@ -108,6 +108,79 @@ import Testing
         #expect(OpencodeGoAPI.apiKey(environment: [:]) == nil)
     }
 
+    @Test func consoleRenewsTileCarriesTheBillingEnd() throws {
+        let text = """
+        {"access":{"endsAt":"2026-10-19T00:00:00Z","meters":{
+          "fiveHour":{"usagePercent":25}}}}
+        """
+        let snapshot = try OpencodeGoAPI.parseConsoleGoStatus(text: text, now: now)
+        let renews = snapshot.stats.first { $0.id == "renews" }
+        #expect(renews?.label == "Renews")
+        #expect(renews?.value == Fmt.until(Self.iso("2026-10-19T00:00:00Z")!))
+        #expect(renews?.subtitle == nil)
+    }
+
+    @Test func apiRenewsTileCarriesTheBillingEnd() throws {
+        let text = """
+        {"usage":{"rolling":{"percent":3,"resetInSec":18100},
+                  "renewsAt":"2026-10-19T00:00:00Z"}}
+        """
+        let snapshot = try OpencodeGoAPI.parseAPIUsage(text: text, now: now)
+        #expect(snapshot.stats.first { $0.id == "renews" }?.value
+            == Fmt.until(Self.iso("2026-10-19T00:00:00Z")!))
+    }
+
+    @Test func noRenewsTileWithoutAnEndDate() throws {
+        let text = #"{"usage":{"rolling":{"percent":3,"resetInSec":18100}}}"#
+        let snapshot = try OpencodeGoAPI.parseAPIUsage(text: text, now: now)
+        #expect(snapshot.stats.contains { $0.id == "renews" } == false)
+    }
+
+    @Test func microCentMetersGetAnAbsoluteSubtitle() throws {
+        let text = """
+        {"access":{"meters":{"fiveHour":{
+          "limitMicroCents":"1200000000","usedMicroCents":"300000000"}}}}
+        """
+        let snapshot = try OpencodeGoAPI.parseConsoleGoStatus(text: text, now: now)
+        #expect(snapshot.limits[0].subtitle == "$3.00 of $12.00")
+    }
+
+    @Test func barePercentHasNoSubtitle() throws {
+        let text = """
+        {"access":{"meters":{"fiveHour":{"usagePercent":25}}}}
+        """
+        let snapshot = try OpencodeGoAPI.parseConsoleGoStatus(text: text, now: now)
+        #expect(snapshot.limits[0].subtitle == nil)
+    }
+
+    @Test func attachingLocalSeriesKeepsTheWebNumbers() throws {
+        let text = """
+        {"access":{"endsAt":"2026-10-19T00:00:00Z","meters":{
+          "fiveHour":{"usagePercent":25},
+          "week":{"usagePercent":40},
+          "month":{"usagePercent":10}}}}
+        """
+        let web = try OpencodeGoAPI.parseConsoleGoStatus(text: text, now: now)
+        let series = OpencodeGoLocalUsage.dailySeries(
+            rows: [OpencodeGoLocalUsage.Row(at: now.addingTimeInterval(-60), cost: 6)], now: now)
+        let merged = OpencodeGoUsageProvider.attachingSeries(series, to: web)
+
+        #expect(merged.limits == web.limits)
+        #expect(merged.stats == web.stats)
+        #expect(merged.source == "web")
+        #expect(merged.renewsAt == web.renewsAt)
+        #expect(merged.dailySeries == series)
+        #expect(merged.chartTitle == "last 7 days · local")
+    }
+
+    @Test func anEmptyLocalSeriesLeavesTheWebSnapshotAlone() throws {
+        let text = """
+        {"access":{"meters":{"fiveHour":{"usagePercent":25}}}}
+        """
+        let web = try OpencodeGoAPI.parseConsoleGoStatus(text: text, now: now)
+        #expect(OpencodeGoUsageProvider.attachingSeries([], to: web) == web)
+    }
+
     private static func iso(_ string: String) -> Date? {
         ISO8601DateFormatter().date(from: string)
     }

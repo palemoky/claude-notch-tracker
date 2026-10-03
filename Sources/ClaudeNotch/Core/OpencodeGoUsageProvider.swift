@@ -15,7 +15,10 @@ actor OpencodeGoUsageProvider {
 
     func fetch(now: Date = Date()) async -> ProviderUsageSnapshot {
         switch await api.fetch(now: now) {
-        case .usage(let snapshot):
+        case .usage(let fetched):
+            // Server meters, but the 7-day bars come from local spend: the web payload has no daily
+            // buckets. Best-effort — an empty/unreadable local store never blocks the web numbers.
+            let snapshot = Self.attachingSeries(await localSeries(now: now), to: fetched)
             lastGood = snapshot
             return snapshot
         case .failed:
@@ -53,6 +56,24 @@ actor OpencodeGoUsageProvider {
                     continuation.resume(returning: .unavailable(
                         (error as? LocalizedError)?.errorDescription ?? "opencode-go usage unavailable"))
                 }
+            }
+        }
+    }
+
+    /// The local daily cost bars for a web snapshot; an empty series leaves it exactly as fetched.
+    static func attachingSeries(_ series: [DailyUsagePoint],
+                                to snapshot: ProviderUsageSnapshot) -> ProviderUsageSnapshot {
+        guard !series.isEmpty else { return snapshot }
+        var snapshot = snapshot
+        snapshot.dailySeries = series
+        snapshot.chartTitle = "last 7 days · local"
+        return snapshot
+    }
+
+    private func localSeries(now: Date) async -> [DailyUsagePoint] {
+        await withCheckedContinuation { continuation in
+            Self.queue.async {
+                continuation.resume(returning: OpencodeGoLocalUsage.fetchDailySeries(now: now))
             }
         }
     }
