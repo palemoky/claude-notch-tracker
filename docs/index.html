@@ -2,134 +2,559 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Claude Notch — AI usage at a glance</title>
-<meta name="description" content="Live Claude, Codex, Antigravity, DeepSeek and opencode-go usage in your Mac's notch: limits, resets, tokens, and cost.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Claude Notch: AI usage limits in your Mac's notch</title>
+<meta name="description" content="Live Claude, Codex, Antigravity, DeepSeek and opencode-go usage in your Mac's notch: limits, resets, tokens, and cost. Free, open source, macOS 14+.">
+<meta name="theme-color" content="#E3E5E8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#18191C" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Claude Notch">
+<meta property="og:description" content="Your AI usage limits, live beside your Mac's camera.">
+<meta property="og:url" content="https://stevemcqueenz.github.io/claude-notch-tracker/">
+<meta property="og:image" content="https://stevemcqueenz.github.io/claude-notch-tracker/demo-poster.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="assets/clawd-0.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #141210; --panel: #1e1b18; --ink: #f2ede6; --muted: rgba(242,237,230,.55);
-  --faint: rgba(242,237,230,.32); --clay: #d97756; --teal: #5cc9a7; --amber: #f0a826;
-  --line: rgba(242,237,230,.12); --radius: 18px;
+  --desk: #E3E5E8; --ink: #15171A; --muted: #565C66; --line: rgba(21,23,26,.14);
+  --bar: rgba(227,229,232,.72); --notch: #000;
+  --ok: #5CCAA6; --green: #5CCC7A; --warn: #F5B333; --hot: #EB5757;
+  --sys: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Archivo", system-ui, sans-serif;
+  --ease: cubic-bezier(.22,1,.36,1);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --desk: #18191C; --ink: #E6E8EB; --muted: #9AA0A9; --line: rgba(230,232,235,.14);
+    --bar: rgba(24,25,28,.72); color-scheme: dark; }
 }
 * { box-sizing: border-box; margin: 0; }
-body { background: var(--bg); color: var(--ink);
-  font: 16px/1.6 -apple-system, "SF Pro Text", Inter, "Helvetica Neue", sans-serif;
-  -webkit-font-smoothing: antialiased; }
-.wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
-/* notch bar */
-.notchbar { display: flex; justify-content: center; padding: 18px 0 0; }
-.notch { background: #000; border-radius: 0 0 22px 22px; padding: 10px 28px;
-  display: flex; gap: 14px; align-items: center; font-size: 14px; font-weight: 600;
-  box-shadow: 0 8px 40px rgba(0,0,0,.6); }
-.notch .crab { font-size: 20px; }
-.notch .pct { font-variant-numeric: tabular-nums; }
-.notch .ring { width: 14px; height: 14px; border-radius: 50%;
-  border: 3px solid var(--teal); border-top-color: rgba(255,255,255,.18); }
-/* hero */
-.hero { text-align: center; padding: 72px 0 40px; }
-.hero h1 { font-size: clamp(40px, 7vw, 64px); letter-spacing: -.02em; line-height: 1.05; }
-.hero h1 .crab { font-size: .9em; }
-.hero p.tag { color: var(--muted); font-size: 20px; margin: 16px 0 28px; }
-.btn { display: inline-block; background: var(--clay); color: #161310; font-weight: 700;
-  padding: 13px 30px; border-radius: 999px; text-decoration: none; font-size: 17px; }
-.btn:hover { filter: brightness(1.08); }
-.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); margin-left: 10px; }
-.fine { color: var(--faint); font-size: 13px; margin-top: 14px; }
-/* demo */
-.demo { text-align: center; padding: 24px 0 56px; }
-.demo img { max-width: 100%; border-radius: var(--radius); border: 1px solid var(--line); }
-/* shots */
-.shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px; padding-bottom: 64px; }
-.shot { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-  overflow: hidden; }
-.shot img { width: 100%; display: block; }
-.shot p { padding: 12px 16px 16px; color: var(--muted); font-size: 14px; }
-.shot p b { color: var(--ink); }
-/* features */
-.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px; padding-bottom: 64px; }
-.feat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 20px; }
-.feat h3 { font-size: 17px; margin-bottom: 6px; }
-.feat p { color: var(--muted); font-size: 14px; }
-/* providers */
-.providers { padding-bottom: 64px; }
-.providers table { width: 100%; border-collapse: collapse; font-size: 15px; }
-.providers th, .providers td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
-.providers th { color: var(--faint); font-weight: 600; font-size: 13px; text-transform: uppercase; }
-.providers td:last-child { color: var(--muted); }
-/* install */
-.install { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 28px; margin-bottom: 64px; }
-.install h2 { margin-bottom: 12px; }
-.install ol { margin-left: 20px; color: var(--muted); }
-.install code { background: #000; padding: 2px 8px; border-radius: 6px; font-size: 14px;
-  color: var(--ink); }
-.install pre { background: #000; border-radius: 10px; padding: 14px 16px; margin-top: 12px;
-  overflow-x: auto; font-size: 14px; }
-footer { text-align: center; color: var(--faint); font-size: 13px; padding: 0 0 48px; }
-footer a { color: var(--muted); }
-h2.section { font-size: 28px; letter-spacing: -.01em; margin-bottom: 20px; }
+html { scroll-behavior: smooth; scroll-padding-top: 56px; }
+body { background: var(--desk); color: var(--ink); font: 17px/1.6 "Archivo", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+img, video { display: block; max-width: 100%; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------- menu bar: the page's nav, the island sits in its middle ---------- */
+.menubar { position: fixed; inset: 0 0 auto; height: 34px; z-index: 10; display: flex;
+  align-items: center; justify-content: space-between; padding: 0 16px; font-size: 13.5px;
+  background: var(--bar); backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6); border-bottom: 1px solid var(--line); }
+.menubar nav { display: flex; gap: 2px; }
+.menubar a { text-decoration: none; padding: 3px 9px; border-radius: 5px; }
+.menubar a:hover { background: var(--line); }
+.menubar .app { font-weight: 700; }
+
+/* ---------- the island ---------- */
+.island { position: fixed; top: 0; left: 50%; z-index: 20; transform: translateX(-50%);
+  width: 300px; height: 34px; background: var(--notch); color: #fff; font-family: var(--sys);
+  border-radius: 0 0 14px 14px;
+  transition: width .55s var(--ease), height .55s var(--ease), border-radius .55s var(--ease); }
+.island::before, .island::after { content: ""; position: absolute; top: 0; width: 8px; height: 8px; }
+.island::before { left: -8px; background: radial-gradient(circle at 0 100%, transparent 8px, var(--notch) 8.5px); }
+.island::after { right: -8px; background: radial-gradient(circle at 100% 100%, transparent 8px, var(--notch) 8.5px); }
+.island.open { width: 360px; height: 286px; border-radius: 0 0 24px 24px; }
+.island-row { display: flex; align-items: center; height: 34px; padding: 0 12px; }
+.island button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.island :focus-visible { outline-color: #fff; }
+.who { width: 44px; height: 30px; display: grid; place-items: center start; }
+.who img { height: 18px; width: auto; image-rendering: pixelated; }
+.who img.mark { height: 17px; image-rendering: auto; }
+.toggle { flex: 1; height: 30px; display: flex; align-items: center; justify-content: flex-end; gap: 7px;
+  font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; position: relative; }
+.cam { position: absolute; left: calc(50% - 22px); top: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%; background: radial-gradient(circle at 35% 35%, #2a2d3a, #0b0c10 60%); }
+.ring { width: 17px; height: 17px; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 3.2; }
+.ring .track { stroke: rgba(255,255,255,.18); }
+.ring .fill { stroke-linecap: round; transition: stroke-dasharray .4s ease, stroke .4s; }
+.phase { width: 8px; height: 8px; border-radius: 50%; }
+
+.drop { height: 252px; padding: 4px 12px 0; opacity: 0; visibility: hidden; overflow: hidden;
+  transition: opacity .2s, visibility 0s .2s; }
+.open .drop { opacity: 1; visibility: visible; transition: opacity .35s .12s; }
+.pager { overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.pages { display: flex; width: 200%; transition: transform .45s var(--ease); }
+.page { width: 50%; height: 222px; padding: 0 1px; }
+.swap { transition: opacity .18s; }
+.swap.fading { opacity: 0; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.tile { background: rgba(255,255,255,.06); border-radius: 10px; padding: 6px 10px; min-height: 68px; }
+.tile:last-child:nth-child(odd) { grid-column: span 2; }
+.tile .l { font-size: 10.5px; color: rgba(255,255,255,.5); }
+.tile .v { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.25; }
+.tile .s { font-size: 10px; color: rgba(255,255,255,.45); font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v.warn { color: var(--warn); } .v.hot { color: var(--hot); } .v.good { color: var(--green); }
+.chart-head, .list-head { display: flex; justify-content: space-between; font-size: 10.5px;
+  color: rgba(255,255,255,.5); padding: 2px 2px 6px; }
+.chart { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 88px; align-items: end;
+  background: rgba(255,255,255,.06); border-radius: 10px; padding: 10px 10px 4px; }
+.chart div { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;
+  font-size: 9.5px; color: rgba(255,255,255,.4); gap: 3px; }
+.chart i { width: 100%; max-width: 22px; border-radius: 3px; background: rgba(255,255,255,.28); }
+.chart .today i { background: #fff; } .chart .today { color: #fff; }
+.list { list-style: none; padding: 0; margin-top: 6px; font-size: 11.5px; }
+.list li { display: flex; justify-content: space-between; gap: 12px; padding: 2px; }
+.list li span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list li span:last-child { color: rgba(255,255,255,.55); font-variant-numeric: tabular-nums; }
+.dots { display: flex; justify-content: center; gap: 2px; padding-top: 4px; }
+.dots button { width: 18px; height: 18px; display: grid; place-items: center; }
+.dots button::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.3); }
+.dots button[aria-current="true"]::after { background: rgba(255,255,255,.9); }
+
+/* ---------- hero ---------- */
+.hero { position: relative; padding-block: 352px 96px; text-align: center; }
+.callout { position: absolute; top: 58px; width: 230px; font-size: 13.5px; line-height: 1.45; color: var(--muted); }
+.callout b { color: var(--ink); font-weight: 600; }
+.callout::before { content: ""; position: absolute; top: 9px; width: 28px; height: 1px; background: var(--muted); opacity: .6; }
+.callout.left { right: calc(50% + 208px); text-align: right; }
+.callout.left::before { right: -40px; }
+.callout.right { left: calc(50% + 208px); text-align: left; }
+.callout.right::before { left: -40px; }
+.callout .sample { display: block; margin-top: 10px; font-size: 12px; opacity: .8; }
+h1 { font-stretch: 125%; font-weight: 800; font-size: clamp(54px, 11.5vw, 156px); line-height: .9;
+  letter-spacing: -.045em; }
+.lede { max-width: 34em; margin: 28px auto 0; font-size: clamp(18px, 2vw, 21px); color: var(--muted); }
+.lede strong { color: var(--ink); font-weight: 600; }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px 22px; justify-content: center; align-items: center; margin-top: 36px; }
+.btn { display: inline-flex; align-items: center; height: 52px; padding: 0 28px; border-radius: 0 0 18px 18px;
+  background: var(--notch); color: #fff; font-weight: 650; font-size: 17px; text-decoration: none;
+  transition: border-radius .3s var(--ease); }
+.btn:hover { border-radius: 18px; }
+@media (prefers-color-scheme: dark) { .btn { box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); } }
+.fine { margin-top: 18px; font-size: 14px; color: var(--muted); }
+.touch-hint { display: none; }
+
+/* ---------- sections ---------- */
+section { padding: 88px 0; border-top: 1px solid var(--line); }
+h2 { font-stretch: 115%; font-weight: 750; font-size: clamp(32px, 4.6vw, 54px); line-height: 1.02;
+  letter-spacing: -.03em; max-width: 16em; }
+.intro { max-width: 38em; margin-top: 18px; color: var(--muted); }
+.film { margin-top: 44px; background: #000; border-radius: 26px; padding: clamp(8px, 1.4vw, 16px); }
+.film video { width: 100%; border-radius: 16px; aspect-ratio: 1540 / 660; object-fit: cover; }
+.shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 24px; margin-top: 48px; }
+.shots img { border-radius: 14px; width: 100%; height: auto; }
+.shots figcaption { margin-top: 12px; font-size: 15px; color: var(--muted); max-width: 30em; }
+.shots figcaption b { color: var(--ink); font-weight: 650; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 44px; font-size: 15.5px; }
+th { text-align: left; font-weight: 500; font-size: 14px; color: var(--muted); padding: 0 16px 12px 0; }
+td { padding: 20px 16px 20px 0; border-top: 1px solid var(--line); vertical-align: top; }
+td:last-child, th:last-child { padding-right: 0; }
+td.name { white-space: nowrap; font-weight: 650; font-stretch: 110%; font-size: 19px; }
+.chip { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 0 0 12px 12px;
+  background: #000; vertical-align: middle; margin-right: 14px; }
+.chip img { height: 20px; width: auto; }
+.chip img.px { height: 16px; image-rendering: pixelated; }
+td.src { color: var(--muted); width: 40%; }
+code { font: .9em ui-monospace, "SF Mono", Menlo, monospace; }
+
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 44px; }
+.split h3 { font-stretch: 110%; font-size: 21px; font-weight: 700; letter-spacing: -.01em; }
+.split p { margin-top: 10px; color: var(--muted); max-width: 32em; }
+.promises { list-style: none; padding: 0; margin-top: 48px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 48px; }
+.promises li { padding: 14px 0 14px 28px; border-top: 1px solid var(--line); position: relative; }
+.promises li::before { content: ""; position: absolute; left: 2px; top: 23px; width: 12px; height: 7px;
+  border: solid var(--ink); border-width: 0 0 2px 2px; transform: rotate(-45deg); }
+
+.details { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px 40px; margin-top: 48px; }
+.details dt { font-weight: 700; font-stretch: 108%; font-size: 18px; padding-top: 16px; border-top: 2px solid var(--ink); }
+.details dd { margin-top: 8px; color: var(--muted); font-size: 15.5px; }
+
+.steps { list-style: none; padding: 0; margin-top: 48px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; counter-reset: step; }
+.steps li { counter-increment: step; color: var(--muted); }
+.steps li::before { content: counter(step); display: block; font-stretch: 125%; font-weight: 800; font-size: 64px;
+  line-height: 1; letter-spacing: -.04em; color: var(--ink); margin-bottom: 14px; }
+.steps b { color: var(--ink); font-weight: 650; }
+.source { margin-top: 64px; display: grid; grid-template-columns: 1fr 1.4fr; gap: 40px; align-items: start; }
+.source h3 { font-stretch: 110%; font-size: 21px; font-weight: 700; }
+.source p { margin-top: 10px; color: var(--muted); font-size: 15.5px; }
+pre { background: #000; color: #E6E8EB; border-radius: 0 0 18px 18px; padding: 22px 24px; overflow-x: auto;
+  font: 14px/1.7 ui-monospace, "SF Mono", Menlo, monospace; }
+pre .c { color: rgba(230,232,235,.45); }
+
+footer { border-top: 1px solid var(--line); padding: 40px 0 56px; font-size: 14px; color: var(--muted); }
+footer .wrap { display: grid; grid-template-columns: 1fr 2fr; gap: 32px; }
+footer p + p { margin-top: 8px; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 980px) {
+  .callout { display: none; }
+  .touch-hint { display: block; }
+  .shots, .details, .steps { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 760px) {
+  .menubar nav { display: none; }
+  .menubar .app { display: none; }
+  .menubar { justify-content: flex-end; }
+  .island { width: 236px; }
+  .island.open { width: min(360px, calc(100vw - 24px)); }
+  .cam { left: calc(50% - 22px); }
+  .wrap { padding: 0 16px; }
+  .hero { padding-block: 330px 72px; }
+  section { padding: 64px 0; }
+  .shots, .details, .steps, .split, .promises, .source, footer .wrap { grid-template-columns: 1fr; }
+  .split { gap: 32px; }
+  .steps { gap: 28px; }
+  table, tbody, tr, td { display: block; }
+  thead { display: none; }
+  tr { border-top: 1px solid var(--line); padding: 18px 0; }
+  td { border: 0; padding: 4px 0; }
+  td.src { width: auto; font-size: 14.5px; }
+}
+@media (max-width: 420px) { .menubar .gh { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; transition-delay: 0s !important; }
+  html { scroll-behavior: auto; }
+}
 </style>
 </head>
 <body>
-<div class="notchbar"><div class="notch"><span class="crab">🦀</span><span class="pct">42%</span><span class="ring"></span></div></div>
-<div class="wrap">
-  <div class="hero">
-    <h1><span class="crab">🦀</span> Claude Notch</h1>
-    <p class="tag">AI usage at a glance — live limits in your Mac's notch.</p>
-    <p>
-      <a class="btn" href="https://github.com/stevemcqueenz/claude-notch-tracker/releases/latest">Download for macOS</a>
-      <a class="btn ghost" href="https://github.com/stevemcqueenz/claude-notch-tracker">GitHub</a>
-    </p>
-    <p class="fine">macOS 14+ · Apple Silicon &amp; Intel · signed &amp; notarized · MIT</p>
+
+<header class="menubar">
+  <nav aria-label="Sections">
+    <a class="app" href="#top">Claude Notch</a>
+    <a href="#providers">Providers</a>
+    <a href="#privacy">Privacy</a>
+    <a href="#install">Install</a>
+  </nav>
+  <a class="gh" href="https://github.com/stevemcqueenz/claude-notch-tracker">GitHub</a>
+</header>
+
+<div class="island" id="island">
+  <div class="island-row">
+    <button class="who" id="who" type="button" aria-label="Switch provider"><img id="whoImg" src="assets/clawd-0.png" alt=""></button>
+    <button class="toggle" id="toggle" type="button" aria-expanded="false" aria-controls="drop">
+      <span class="cam" aria-hidden="true"></span>
+      <span id="pill">42%</span>
+      <span id="pillMark" aria-hidden="true"></span>
+    </button>
   </div>
-  <div class="demo"><img src="demo.gif" alt="Claude Notch: click to expand, swipe pages, switch providers"></div>
-
-  <h2 class="section">One island, every provider</h2>
-  <div class="shots">
-    <div class="shot"><img src="page-limits.png" alt="Limits page"><p><b>Limits</b> — 5-hour, 7-day, weekly caps plus today's cost</p></div>
-    <div class="shot"><img src="page-sessions.png" alt="Sessions page"><p><b>Week + sessions</b> — 7 days of spend, live conversations</p></div>
-    <div class="shot"><img src="page-alltime.png" alt="All-time top projects"><p><b>All-time</b> — your biggest projects ever</p></div>
-    <div class="shot"><img src="codex-limits.png" alt="Codex limits"><p><b>Codex</b> — rate windows + 7-day tokens</p></div>
-    <div class="shot"><img src="codex-tasks.png" alt="Codex tasks"><p><b>Tasks</b> — account totals + recent work</p></div>
-    <div class="shot"><img src="settings.png" alt="Settings menu"><p><b>Settings</b> — right-click the island</p></div>
+  <div class="drop" id="drop">
+    <div class="pager" id="pager">
+      <div class="pages" id="pages">
+        <div class="page swap" id="page1" aria-label="Limits"></div>
+        <div class="page swap" id="page2" aria-label="Details"></div>
+      </div>
+    </div>
+    <div class="dots" role="group" aria-label="Island page">
+      <button type="button" data-page="0" aria-label="Limits page" aria-current="true"></button>
+      <button type="button" data-page="1" aria-label="Details page" aria-current="false"></button>
+    </div>
   </div>
-
-  <h2 class="section">Why you'll keep it</h2>
-  <div class="features">
-    <div class="feat"><h3>📊 Real limit tiles</h3><p>The same bars the official apps show — 5-hour, 7-day, weekly caps — each with a reset countdown and urgency colour.</p></div>
-    <div class="feat"><h3>🔄 Five providers, one click</h3><p>Claude, Codex, Antigravity, DeepSeek and opencode-go. Click the icon to cycle; only installed ones appear.</p></div>
-    <div class="feat"><h3>🦀 Clawd the crab</h3><p>He quickens as you approach a limit and freezes when you're out. Mono and Spark looks included.</p></div>
-    <div class="feat"><h3>🔒 Local-first</h3><p>Reads your local sessions and talks only to first-party services. No analytics, no third-party servers.</p></div>
-    <div class="feat"><h3>🌙 Hide in full screen</h3><p>Optionally tucks into the notch while movies and video own the display.</p></div>
-    <div class="feat"><h3>✨ Zero fuss</h3><p>No Dock icon, no menu-bar clutter. Draws its own notch on non-notch Macs, updates itself.</p></div>
-  </div>
-
-  <h2 class="section">Providers</h2>
-  <div class="providers"><table>
-    <tr><th>Provider</th><th>What you see</th></tr>
-    <tr><td>Claude</td><td>5-hour, 7-day + Fable limits, credits, local cost, sessions</td></tr>
-    <tr><td>Codex</td><td>Rate-limit windows, token totals, credits, recent tasks</td></tr>
-    <tr><td>Antigravity</td><td>Quota windows, tokens, models, projects, week chart</td></tr>
-    <tr><td>DeepSeek</td><td>Balance, peak/off-peak phase, observed spend</td></tr>
-    <tr><td>opencode-go</td><td>5-hour / weekly / monthly meters, renewals, sessions</td></tr>
-  </table></div>
-
-  <div class="install">
-    <h2>Install in a minute</h2>
-    <ol>
-      <li>Download <code>Claude Notch.zip</code> from <a href="https://github.com/stevemcqueenz/claude-notch-tracker/releases/latest">Releases</a>, drag to Applications.</li>
-      <li>Double-click to open. On the Keychain prompt, choose <b>Always Allow</b> so it can read your local session.</li>
-      <li>Right-click the island → <i>Launch at Login</i> to keep it around.</li>
-    </ol>
-    <pre>git clone https://github.com/stevemcqueenz/claude-notch-tracker
-cd claude-notch-tracker
-swift run ClaudeNotch   # needs full Xcode</pre>
-  </div>
-
-  <footer>MIT · <a href="https://github.com/stevemcqueenz/claude-notch-tracker">stevemcqueenz/claude-notch-tracker</a> · Clawd © Mick Cesanek</footer>
 </div>
+
+<main id="top">
+  <div class="hero wrap">
+    <p class="callout left"><b>Click Clawd</b> to switch between Claude, Codex, Antigravity, DeepSeek and opencode-go.</p>
+    <p class="callout right"><b>Click the percentage</b> to open or close. Swipe, scroll sideways or use the dots for the second page.
+      <span class="sample">This island runs on sample numbers.</span></p>
+
+    <h1>Claude Notch</h1>
+    <p class="lede"><strong>Your AI usage limits, live beside your Mac's camera.</strong> Reset countdowns, today's spend and your running sessions are one click away. Click elsewhere and the island tucks back into the notch.</p>
+    <p class="touch-hint fine">The island at the top of this page works like the app. Tap it, and tap the crab to switch provider. Numbers are samples.</p>
+    <div class="ctas">
+      <a class="btn" href="https://github.com/stevemcqueenz/claude-notch-tracker/releases/latest">Download for macOS</a>
+      <a href="https://github.com/stevemcqueenz/claude-notch-tracker">View the source on GitHub</a>
+    </div>
+    <p class="fine">Free and MIT licensed. macOS 14 or later on Apple Silicon or Intel. Signed and notarized.</p>
+  </div>
+
+  <section aria-labelledby="h-film">
+    <div class="wrap">
+      <h2 id="h-film">The real app, on a real notch</h2>
+      <p class="intro">Collapsed, it's Clawd and your session percentage on either side of the camera. Open, it's a two-page card you can swipe through. There's no Dock icon and nothing in your menu bar.</p>
+      <div class="film">
+        <video src="demo.mp4" poster="demo-poster.png" autoplay muted loop playsinline preload="metadata"
+          aria-label="Screen recording: clicking the notch expands the island, swiping between pages, then switching providers"></video>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-shots">
+    <div class="wrap">
+      <h2 id="h-shots">Every page of the island</h2>
+      <div class="shots">
+        <figure><img src="page-limits.png" width="816" height="600" loading="lazy" alt="Limits page: 5-Hour, 7-Day and Fable weekly limits, today's cost, credits and all-time spend"><figcaption><b>Limits.</b> The 5-hour, 7-day and Fable weekly bars from the Claude app, plus today's cost.</figcaption></figure>
+        <figure><img src="page-sessions.png" width="816" height="600" loading="lazy" alt="Week chart of the last 7 days of local spend above today's conversations"><figcaption><b>Week and sessions.</b> Seven days of spend, then today's conversations by name.</figcaption></figure>
+        <figure><img src="page-alltime.png" width="816" height="600" loading="lazy" alt="All-time top projects ranked by spend"><figcaption><b>All-time projects.</b> Tap the sessions block to see your biggest projects ever.</figcaption></figure>
+        <figure><img src="codex-limits.png" width="816" height="600" loading="lazy" alt="Codex limits page: rate-limit windows above the 7-day token chart"><figcaption><b>Codex limits.</b> Rate-limit windows and a 7-day token chart.</figcaption></figure>
+        <figure><img src="codex-tasks.png" width="816" height="600" loading="lazy" alt="Codex detail page: weekly and all-time totals above recent tasks"><figcaption><b>Codex tasks.</b> Account totals and your recent tasks.</figcaption></figure>
+        <figure><img src="settings.png" width="972" height="628" loading="lazy" alt="Right-click menu: provider, icon, rotate providers, pause, hide in full screen, launch at login, updates"><figcaption><b>Settings.</b> Everything lives in the island's right-click menu.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="providers" aria-labelledby="h-providers">
+    <div class="wrap">
+      <h2 id="h-providers">Five providers, one island</h2>
+      <p class="intro">Only providers installed on your Mac appear. Click the icon on the left of the island to cycle through them, or let it rotate every 10 seconds, 30 seconds or minute.</p>
+      <table>
+        <thead><tr><th>Provider</th><th>What you see</th><th>Where it comes from</th></tr></thead>
+        <tbody>
+          <tr><td class="name"><span class="chip"><img class="px" src="assets/clawd-0.png" alt=""></span>Claude</td>
+            <td>5-hour, 7-day and Fable weekly limits, credits, today's cost with a projection for tonight, named sessions, all-time projects</td>
+            <td class="src">Claude Desktop, a browser signed in to claude.ai, or the Claude Code CLI login. Cost and tokens from your local <code>~/.claude</code> logs.</td></tr>
+          <tr><td class="name"><span class="chip"><img src="assets/codex.png" alt=""></span>Codex</td>
+            <td>Rate-limit windows, token totals, credits, plan, recent tasks, 7-day token chart</td>
+            <td class="src">The official local <code>codex app-server</code>. Session logs aren't parsed.</td></tr>
+          <tr><td class="name"><span class="chip"><img src="assets/antigravity.png" alt=""></span>Antigravity</td>
+            <td>Quota windows, tokens, models, projects, week chart</td>
+            <td class="src">The <code>agy</code> CLI's read-only <code>/usage</code> command, which spends no quota, plus token counts from its local stores.</td></tr>
+          <tr><td class="name"><span class="chip"><img src="assets/deepseek.png" alt=""></span>DeepSeek</td>
+            <td>Balance, peak or off-peak pricing right now, spend today and this week</td>
+            <td class="src">Your DeepSeek API key. Spend is observed from the balance going down, and labelled that way.</td></tr>
+          <tr><td class="name"><span class="chip"><img src="assets/opencodego.png" alt=""></span>opencode-go</td>
+            <td>5-hour, weekly and monthly meters, renewals, Zen balance, sessions</td>
+            <td class="src">Your opencode.ai browser session, with local history as the fallback.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="privacy" aria-labelledby="h-privacy">
+    <div class="wrap">
+      <h2 id="h-privacy">Local-first, and clear about what's local</h2>
+      <div class="split">
+        <div>
+          <h3>Limits come from the provider</h3>
+          <p>The limit bars use the same endpoint the official apps do, so they count everything: desktop, terminal, cloud and remote sessions.</p>
+        </div>
+        <div>
+          <h3>Spend and tokens are counted on your Mac</h3>
+          <p>Cost and token figures come from your local logs and are marked <i>local</i>. Work done in the cloud counts toward your limits but not toward the local dollar figure.</p>
+        </div>
+      </div>
+      <ul class="promises">
+        <li>Talks only to each provider's own service. No analytics, no servers of its own.</li>
+        <li>Never reads prompts, transcripts or artifacts. Only token counts and project folder names.</li>
+        <li>Reads the Claude Code CLI login without refreshing it, so your terminal session stays as it was.</li>
+        <li>Asks through the standard macOS Keychain prompt before reading anything stored there.</li>
+      </ul>
+      <p class="intro">Read the <a href="https://github.com/stevemcqueenz/claude-notch-tracker/blob/main/docs/providers.md">provider architecture</a> for every data source and security boundary.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-details">
+    <div class="wrap">
+      <h2 id="h-details">Small things it gets right</h2>
+      <dl class="details">
+        <div><dt>Clawd keeps pace</dt><dd>The crab walks faster as you near a limit and stops when you're out. Prefer a mono crab or the Claude spark? Pick one from the Icon menu.</dd></div>
+        <div><dt>Out of the way in full screen</dt><dd>Turn on Hide in full screen and the island tucks into the notch while a film or game owns the display.</dd></div>
+        <div><dt>A notch on every Mac</dt><dd>No notch? It draws its own at the top of the screen.</dd></div>
+        <div><dt>DeepSeek's clock</dt><dd>A dot shows whether you're paying peak or off-peak rates right now, Chinese public holidays included.</dd></div>
+        <div><dt>Spend before it happens</dt><dd>Today's Claude cost comes with a projection for tonight, so you can pace yourself.</dd></div>
+        <div><dt>Keeps itself current</dt><dd>Updates arrive automatically. Check for one any time from the right-click menu.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section id="install" aria-labelledby="h-install">
+    <div class="wrap">
+      <h2 id="h-install">Install it in a minute</h2>
+      <ol class="steps">
+        <li><b>Download</b> <code>Claude Notch.zip</code> from the <a href="https://github.com/stevemcqueenz/claude-notch-tracker/releases/latest">latest release</a>, unzip it and drag the app to Applications.</li>
+        <li><b>Open it.</b> It's notarized, so there's no security warning. When the Keychain prompt appears, choose <b>Always Allow</b>.</li>
+        <li><b>Keep it around.</b> Right-click the island and choose Launch at Login.</li>
+      </ol>
+      <div class="source">
+        <div>
+          <h3>Build from source</h3>
+          <p>You'll need a signed-in Claude, Codex, Antigravity, DeepSeek or opencode-go account, and the full Xcode toolchain for the SwiftUI macros.</p>
+        </div>
+        <pre><code>git clone https://github.com/stevemcqueenz/claude-notch-tracker
+cd claude-notch-tracker
+swift run ClaudeNotch       <span class="c"># run it</span>
+bash scripts/make-app.sh    <span class="c"># build the .app and a zip</span></code></pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>MIT licensed. <a href="https://github.com/stevemcqueenz/claude-notch-tracker">stevemcqueenz/claude-notch-tracker</a></p>
+    <div>
+      <p>Clawd and spark animation frames © Mick Cesanek (<a href="https://github.com/m1ckc3s/claude-status-bar">claude-status-bar</a>, MIT). Notch shape inspired by <a href="https://github.com/eyadhammouda/pookify">pookify</a>. DeepSeek mark from <a href="https://github.com/lobehub/lobe-icons">LobeIcons</a>.</p>
+      <p>Claude is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Antigravity is a trademark of Google LLC. All are used nominatively; this project isn't affiliated with any of them.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Sample data, shaped like the app's tiles. r = seconds until reset (counts down live).
+const H = 3600, D = 86400;
+const PROVIDERS = [
+  { name: 'Claude', crab: true, pill: { used: .42 },
+    tiles: [
+      { l: '5-Hour', used: .42, r: 2*H + 18*60 }, { l: '7-Day', used: .71, r: 3*D + 6*H },
+      { l: 'Fable', used: .18, r: 3*D + 6*H },
+      { l: 'cost today · local', v: '$38.20', s: '~$61.40 by tonight' },
+      { l: 'credits', v: '€35.52', s: '14% used' },
+      { l: 'all-time · local', v: '$4,812.06', s: '2.1B tokens' } ],
+    week: { l: 'last 7 days · local', vals: [12.4, 31.9, 8.2, 44.7, 27.3, 19.8, 38.2], fmt: v => '$' + Math.round(v) },
+    list: { l: 'sessions today', rows: [['Refactor billing webhooks', '$14.82'], ['Notch landing page', '$11.37'], ['Fix flaky snapshot tests', '$6.01']] } },
+  { name: 'Codex', mark: 'assets/codex.png', pill: { used: .23 },
+    tiles: [
+      { l: '5-Hour', used: .23, r: 3*H + 41*60 }, { l: '7-Day', used: .54, r: 4*D + 2*H },
+      { l: 'tokens today · account', v: '1.8M' }, { l: 'credits', v: '120' },
+      { l: 'plan', v: 'Pro' }, { l: 'tokens · all-time', v: '312.4M' } ],
+    week: { l: 'last 7 days · account', vals: [2.1, 4.8, 3.3, 0.9, 6.2, 5.1, 1.8], fmt: v => v.toFixed(1) + 'M' },
+    list: { l: 'recent tasks', rows: [['Add retry to sync client', '4m'], ['Migrate tests to Swift Testing', '1h'], ['Audit keychain access', '3h']] } },
+  { name: 'Antigravity', mark: 'assets/antigravity.png', pill: { used: .78 },
+    tiles: [
+      { l: '5-Hour', used: .78, r: 1*H + 7*60 }, { l: '7-Day', used: .31, r: 5*D + 9*H },
+      { l: 'tokens today · local', v: '920K' }, { l: 'tokens · all-time', v: '88.6M' },
+      { l: 'thinking · all-time', v: '21.3M' } ],
+    week: { l: 'last 7 days · local', vals: [0.4, 1.2, 0.8, 2.6, 1.9, 0.3, 0.9], fmt: v => v.toFixed(1) + 'M' },
+    list: { l: 'top projects', rows: [['notch-tracker', '31.2M'], ['dotfiles', '12.8M'], ['blog', '6.4M']] } },
+  { name: 'DeepSeek', mark: 'assets/deepseek.png', pill: { text: '¥86', dot: 'var(--green)' },
+    tiles: [
+      { l: 'balance', v: '¥86.40' }, { l: 'pricing now', v: 'off-peak', tint: 'good', s: 'standard rate' },
+      { l: 'spent today · observed', v: '¥3.12' }, { l: 'last 7 days · observed', v: '¥27.80' } ],
+    week: { l: 'last 7 days · observed', vals: [4.1, 3.6, 5.2, 2.8, 4.9, 4.1, 3.1], fmt: v => '¥' + v.toFixed(1) },
+    list: { l: 'peak hours, Beijing time', rows: [['09:00–12:00 on working days', '2×'], ['14:00–18:00 on working days', '2×'], ['Public holidays', 'off-peak']] } },
+  { name: 'opencode-go', mark: 'assets/opencodego.png', pill: { used: .88 },
+    tiles: [
+      { l: '5-Hour', used: .12, r: 4*H + 2*60 }, { l: '7-Day', used: .47, r: 2*D + 11*H },
+      { l: 'Monthly', used: .88, r: 9*D + 4*H },
+      { l: 'zen balance', v: '$18.40' }, { l: 'Renews', v: 'in 9d', s: 'monthly plan' },
+      { l: 'Sessions left', v: '12' } ],
+    week: { l: 'last 7 days · local', vals: [1.2, 0.8, 2.4, 1.9, 0.6, 2.2, 1.4], fmt: v => '$' + v.toFixed(2) },
+    list: { l: 'sessions today', rows: [['Rewrite parser in Zig', '$0.84'], ['README pass', '$0.31'], ['CI cache fix', '$0.22']] } },
+];
+
+const $ = id => document.getElementById(id);
+const island = $('island'), toggle = $('toggle'), pages = $('pages');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const t0 = Date.now();
+let current = 0, page = 0, openedAtY = 0;
+
+// Same thresholds and formats as the app (Fmt.until, ringState, barColor).
+const state = u => u < .66 ? 'ok' : u < .85 ? 'warn' : 'hot';
+const until = secs => {
+  const s = Math.max(0, Math.floor(secs)), d = s / D | 0, h = (s % D) / H | 0, m = (s % H) / 60 | 0;
+  return d ? `${d}d ${h}h` : h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`;
+};
+const left = r => r - (Date.now() - t0) / 1000;
+const RING = { ok: 'var(--ok)', warn: 'var(--warn)', hot: 'var(--hot)' };
+
+function tile(t) {
+  if ('used' in t) {
+    const st = state(t.used);
+    return `<div class="tile"><div class="l">${t.l}</div><div class="v ${st === 'ok' ? '' : st}">${Math.round(t.used * 100)}%</div><div class="s" data-r="${t.r}">resets in ${until(left(t.r))}</div></div>`;
+  }
+  return `<div class="tile"><div class="l">${t.l}</div><div class="v ${t.tint || ''}">${t.v}</div>${t.s ? `<div class="s">${t.s}</div>` : ''}</div>`;
+}
+
+function chart(w) {
+  const max = Math.max(...w.vals), peak = w.vals.indexOf(max);
+  const days = w.vals.map((_, i) => 'SMTWTFS'[(new Date().getDay() - 6 + i + 7) % 7]);
+  const bars = w.vals.map((v, i) => `<div class="${i === 6 ? 'today' : ''}"><i style="height:${Math.max(4, v / max * 52)}px"></i>${days[i]}</div>`).join('');
+  return `<div class="chart-head"><span>${w.l}</span><span>peak ${w.fmt(max)}${peak === 6 ? ' today' : ''}</span></div><div class="chart">${bars}</div>`;
+}
+
+function render() {
+  const p = PROVIDERS[current];
+  $('page1').innerHTML = `<div class="tiles">${p.tiles.map(tile).join('')}</div>`;
+  $('page2').innerHTML = chart(p.week) +
+    `<ul class="list"><li class="list-head"><span>${p.list.l}</span></li>${p.list.rows.map(([a, b]) => `<li><span>${a}</span><span>${b}</span></li>`).join('')}</ul>`;
+  const pill = p.pill;
+  if (pill.text) {
+    $('pill').textContent = pill.text;
+    $('pillMark').innerHTML = `<span class="phase" style="display:block;background:${pill.dot}"></span>`;
+  } else {
+    const c = 2 * Math.PI * 6.4;
+    $('pill').textContent = Math.round(pill.used * 100) + '%';
+    $('pillMark').innerHTML = `<svg class="ring" viewBox="0 0 17 17"><circle class="track" cx="8.5" cy="8.5" r="6.4"/><circle class="fill" cx="8.5" cy="8.5" r="6.4" stroke="${RING[state(pill.used)]}" stroke-dasharray="${pill.used * c} ${c}"/></svg>`;
+  }
+  const img = $('whoImg');
+  img.className = p.crab ? '' : 'mark';
+  if (!p.crab) img.src = p.mark;
+  $('who').setAttribute('aria-label', `Switch provider (showing ${p.name})`);
+  toggle.setAttribute('aria-label', `${p.name} usage ${$('pill').textContent}. ${island.classList.contains('open') ? 'Close' : 'Open'} details`);
+  setPage(0);
+}
+
+function setPage(n) {
+  page = n;
+  pages.style.transform = `translateX(${-50 * n}%)`;
+  document.querySelectorAll('.dots button').forEach(b => b.setAttribute('aria-current', String(+b.dataset.page === n)));
+}
+
+function setOpen(open) {
+  island.classList.toggle('open', open);
+  toggle.setAttribute('aria-expanded', String(open));
+  toggle.setAttribute('aria-label', toggle.getAttribute('aria-label').replace(/(Open|Close) details/, open ? 'Close details' : 'Open details'));
+  openedAtY = scrollY;
+}
+
+// Clawd: 8 fps when calm, up to 18 fps near the limit, frozen when out (AvatarView.fps).
+const frames = Array.from({ length: 20 }, (_, i) => { const im = new Image(); im.src = `assets/clawd-${i}.png`; return im.src; });
+let frame = 0, last = 0;
+function walk(ts) {
+  const p = PROVIDERS[current];
+  if (p.crab) {
+    const fps = 8 + Math.min(1, p.pill.used) * 10;
+    if (p.pill.used < 1 && ts - last > 1000 / fps) { frame = (frame + 1) % frames.length; last = ts; $('whoImg').src = frames[frame]; }
+  }
+  requestAnimationFrame(walk);
+}
+if (reduced) $('whoImg').src = frames[0]; else requestAnimationFrame(walk);
+
+$('who').addEventListener('click', () => {
+  const swap = document.querySelectorAll('.swap');
+  swap.forEach(s => s.classList.add('fading'));
+  setTimeout(() => { current = (current + 1) % PROVIDERS.length; if (PROVIDERS[current].crab) $('whoImg').src = frames[frame]; render(); swap.forEach(s => s.classList.remove('fading')); }, reduced ? 0 : 160);
+});
+toggle.addEventListener('click', () => setOpen(!island.classList.contains('open')));
+document.querySelectorAll('.dots button').forEach(b => b.addEventListener('click', () => setPage(+b.dataset.page)));
+document.addEventListener('click', e => { if (!island.contains(e.target)) setOpen(false); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && island.classList.contains('open')) { setOpen(false); toggle.focus(); }
+  if (island.contains(document.activeElement) && island.classList.contains('open')) {
+    if (e.key === 'ArrowRight') setPage(1);
+    if (e.key === 'ArrowLeft') setPage(0);
+  }
+});
+addEventListener('scroll', () => { if (Math.abs(scrollY - openedAtY) > 120) setOpen(false); }, { passive: true });
+
+// Swipe: drag on touch/mouse, or a sideways two-finger scroll on a trackpad.
+const pager = $('pager');
+let startX = null, dx = 0;
+pager.addEventListener('pointerdown', e => { startX = e.clientX; dx = 0; pages.style.transition = 'none'; });
+pager.addEventListener('pointermove', e => {
+  if (startX === null) return;
+  dx = e.clientX - startX;
+  pages.style.transform = `translateX(calc(${-50 * page}% + ${dx * 0.6}px))`;
+});
+const endDrag = () => {
+  if (startX === null) return;
+  startX = null; pages.style.transition = '';
+  setPage(dx < -40 ? 1 : dx > 40 ? 0 : page);
+};
+pager.addEventListener('pointerup', endDrag);
+pager.addEventListener('pointercancel', endDrag);
+pager.addEventListener('pointerleave', endDrag);
+let wheelLock = 0;
+pager.addEventListener('wheel', e => {
+  if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+  e.preventDefault();
+  if (Date.now() < wheelLock || Math.abs(e.deltaX) < 12) return;
+  setPage(e.deltaX > 0 ? 1 : 0); wheelLock = Date.now() + 600;
+}, { passive: false });
+
+// Live reset countdowns.
+setInterval(() => document.querySelectorAll('[data-r]').forEach(el => el.textContent = 'resets in ' + until(left(+el.dataset.r))), 15000);
+
+render();
+// One orchestrated moment: the island opens by itself once, the way it does when you click it.
+setTimeout(() => { if (scrollY < 40) setOpen(true); }, reduced ? 0 : 900);
+</script>
 </body>
 </html>
