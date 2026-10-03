@@ -60,7 +60,7 @@ struct ChineseHolidayCalendar: Equatable, Sendable {
 }
 
 /// The holiday calendar the DeepSeek provider prices against: the years shipped in the bundle,
-/// then whatever a daily check of holiday-cn has added, so next year's arrangement arrives
+/// then whatever a monthly check of holiday-cn (on the 28th) has added, so next year's arrangement arrives
 /// without a release. Only the DeepSeek provider owns one, so nobody who hasn't set up DeepSeek
 /// ever makes the request.
 actor ChineseHolidaySource {
@@ -96,11 +96,30 @@ actor ChineseHolidaySource {
         }
     }
 
-    /// At most once a day: this year, and next year once the November notice is out. A failure
-    /// leaves the check due, and the calendar answers from what it already has meanwhile.
+    /// Whether a check is due. An arrangement is published once a year and amended almost never,
+    /// so once a month, on the 28th in Beijing (every month has one), or on the first refresh after
+    /// it if the Mac was off; the November one catches a notice issued late October to mid
+    /// November. While a year about to be needed is missing (this one, or next year in December)
+    /// it is daily instead, so a late notice still lands before New Year's Day.
+    static func isCheckDue(lastChecked: Date?, calendar: ChineseHolidayCalendar, now: Date) -> Bool {
+        guard let lastChecked else { return true }
+        let beijing = ChineseHolidayCalendar.beijingCalendar
+        let nextYear = beijing.date(byAdding: .year, value: 1, to: now)!
+        if !calendar.covers(now)
+            || (beijing.component(.month, from: now) == 12 && !calendar.covers(nextYear)) {
+            return now.timeIntervalSince(lastChecked) >= 86_400
+        }
+        var day = beijing.dateComponents([.year, .month, .day], from: now)
+        if day.day! < 28 { day.month! -= 1 }        // month 0 normalises to last December
+        day.day = 28
+        return lastChecked < beijing.date(from: day)!
+    }
+
+    /// This year, and next year once the November notice is out, when `isCheckDue` says so. A
+    /// failure leaves the check due, and the calendar answers from what it already has meanwhile.
     func refreshIfDue(now: Date = Date()) async {
-        if let last = defaults.object(forKey: Self.checkedAtKey) as? Date,
-           now.timeIntervalSince(last) < 86_400 { return }
+        let last = defaults.object(forKey: Self.checkedAtKey) as? Date
+        guard Self.isCheckDue(lastChecked: last, calendar: calendar, now: now) else { return }
         let year = ChineseHolidayCalendar.beijingCalendar.component(.year, from: now)
         var failed = false
         for candidate in [year, year + 1] {

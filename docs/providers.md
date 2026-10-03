@@ -149,9 +149,10 @@ GET https://api.deepseek.com/user/balance   (Authorization: Bearer <key>)
   against spend. Time the app wasn't running lands on the next reading's day.
 - **Peak and off-peak** follow DeepSeek's published rule: 09:00–12:00 and 14:00–18:00 Beijing
   time, Monday to Friday, excluding Chinese statutory holidays. The holiday dates ship for the
-  current year (`holiday-cn-<year>.json`) and are refreshed once a day from
+  current year (`holiday-cn-<year>.json`) and are refreshed on the 28th of each month (Beijing time, or at the next launch if missed) from
   [holiday-cn](https://github.com/NateScarlet/holiday-cn) over jsDelivr, so a new year's
-  arrangement arrives without a release. A year with no data falls back to the weekday rule.
+  arrangement arrives without a release. While a needed year is missing (the current one, or
+  next year in December) the check runs daily instead, so the notice lands before New Year's Day. A year with no data falls back to the weekday rule.
 
 DeepSeek has no limit window, so instead of a percent ring the pill shows the balance and a dot
 for the phase: green off-peak, amber at peak, red when the balance is too low for API calls.
