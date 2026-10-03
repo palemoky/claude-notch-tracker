@@ -241,15 +241,19 @@ struct IslandView: View {
             .gesture(
                 DragGesture(minimumDistance: 12)
                     .onChanged { dragX = $0.translation.width }
-                    .onEnded { v in
-                        if v.translation.width < -40 { page = min(1, page + 1) }
-                        else if v.translation.width > 40 { page = max(0, page - 1) }
-                        dragX = 0
-                    }
+                    .onEnded { endSwipe($0.translation.width) }
             )
+            .background(TrackpadSwipeReader(onChange: { dragX = $0 }, onEnd: endSwipe))
             pageDots
         }
         .padding(.horizontal, edgeInset).padding(.top, 6).padding(.bottom, 9)
+    }
+
+    /// Settles a click-drag or trackpad swipe: past 40pt flips the page, otherwise snaps back.
+    private func endSwipe(_ translation: CGFloat) {
+        if translation < -40 { page = min(1, page + 1) }
+        else if translation > 40 { page = max(0, page - 1) }
+        dragX = 0
     }
 
     private var pageDots: some View {
