@@ -15,6 +15,8 @@ let package = Package(
                 .copy("Resources/codex.svg"),
                 .copy("Resources/codex.png"),
                 .copy("Resources/antigravity.png"),
+                // opencode-go's mark (same geometric frame CodexBar uses).
+                .copy("Resources/opencodego.png"),
                 // DeepSeek's mark from LobeIcons (MIT, see LobeIcons-LICENSE.txt).
                 .copy("Resources/deepseek.png"),
                 .copy("Resources/LobeIcons-LICENSE.txt"),

@@ -46,6 +46,7 @@ struct IslandView: View {
     @MainActor private static let codexIcon: NSImage? = mark(named: "codex")
     @MainActor private static let antigravityIcon: NSImage? = mark(named: "antigravity")
     @MainActor private static let deepseekIcon: NSImage? = mark(named: "deepseek")
+    @MainActor private static let opencodegoIcon: NSImage? = mark(named: "opencodego")
 
     /// Resolves a bundled provider mark, preferring the packaged .app layout over SwiftPM's.
     private static func mark(named name: String) -> NSImage? {
@@ -70,7 +71,7 @@ struct IslandView: View {
         case .codex: codexIcon
         case .antigravity: antigravityIcon
         case .deepseek: deepseekIcon
-        case .opencodeGo: nil   // no bundled mark yet: providerIcon falls back to the SF symbol.
+        case .opencodeGo: opencodegoIcon
         }
     }
 
