@@ -79,7 +79,9 @@ enum OpencodeGoLocalUsage {
         var monthlyCost = 0.0
         var oldestSession = now
         for row in rows {
-            if row.at >= sessionStart, row.at < now {
+            // Upper bound is inclusive: a call logged this instant belongs to this window.
+            // (Future-dated rows from clock skew stay out.)
+            if row.at >= sessionStart, row.at <= now {
                 sessionCost += row.cost
                 oldestSession = min(oldestSession, row.at)
             }

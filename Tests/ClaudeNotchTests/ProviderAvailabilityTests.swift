@@ -40,9 +40,11 @@ import Testing
 
     @Test func antigravityNeedsEitherTheCLIOrLocalHistory() {
         // Either half is useful on its own: the CLI gives quota rings, local stores give the
-        // chart and tiles. Detection must agree with the paths the provider actually reads.
+        // chart and tiles. A bare ~/.gemini dir is neither: detection must agree with what the
+        // provider actually reads, so empty installs stay out of the icon cycle like
+        // Codex and DeepSeek do.
         let expected = AntigravityPaths.executable() != nil
-            || !AntigravityPaths.dataDirectories.isEmpty
+            || !AntigravityPaths.conversationStores().isEmpty
         #expect(ProviderAvailability.isAvailable(.antigravity) == expected)
     }
 
