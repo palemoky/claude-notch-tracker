@@ -291,22 +291,44 @@ actor ClaudeAPIService {
 
     /// The Claude Code CLI stores its OAuth credentials as JSON in the login Keychain under the
     /// service "Claude Code-credentials". Returns the access token and its expiry, if present.
+    ///
+    /// Read through `/usr/bin/security`, not `SecItemCopyMatching`: the CLI writes the item with
+    /// that tool and rewrites it on every token refresh, which drops any "Always Allow" grant
+    /// given to this app, so a direct read raised the authorization prompt again every few
+    /// hours. `security` stays on the item's access list across rewrites, so this never prompts.
     private func cliOAuthToken() -> (token: String, expiresAt: Date)? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "Claude Code-credentials",
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var item: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
-              let data = item as? Data,
+        guard let out = try? AntigravityCLI.capture(
+                  executable: URL(fileURLWithPath: "/usr/bin/security"),
+                  arguments: ["find-generic-password", "-s", "Claude Code-credentials", "-w"],
+                  timeout: 30),
+              let data = Self.passwordData(fromSecurityOutput: out),
               let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let oauth = root["claudeAiOauth"] as? [String: Any],
               let token = oauth["accessToken"] as? String, !token.isEmpty else { return nil }
         // expiresAt is epoch milliseconds; a missing value reads as already-expired (→ ignored).
         let expMs = (oauth["expiresAt"] as? NSNumber)?.doubleValue ?? 0
         return (token, Date(timeIntervalSince1970: expMs / 1000))
+    }
+
+    /// `security … -w` prints the password as text, but switches to bare hex when the value has
+    /// any non-printable byte (a newline in pretty-printed JSON is enough). Undo that, so a format
+    /// change in the CLI can't silently turn the token into unparseable hex.
+    static func passwordData(fromSecurityOutput out: Data) -> Data? {
+        guard let text = String(data: out, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
+        guard text.count.isMultiple(of: 2), text.allSatisfy(\.isHexDigit) else {
+            return Data(text.utf8)
+        }
+        var bytes = [UInt8]()
+        bytes.reserveCapacity(text.count / 2)
+        var i = text.startIndex
+        while i < text.endIndex {
+            let j = text.index(i, offsetBy: 2)
+            guard let b = UInt8(text[i..<j], radix: 16) else { return nil }
+            bytes.append(b)
+            i = j
+        }
+        return Data(bytes)
     }
 
     // MARK: - cookie stores
