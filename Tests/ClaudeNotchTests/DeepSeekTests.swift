@@ -83,6 +83,26 @@ private let holidays = ChineseHolidayCalendar.empty.merging(holidayCNJSON: holid
             .appendingPathComponent(UUID().uuidString))
         #expect(await source.calendar.years.contains(2026))
     }
+
+    /// On the 28th (Beijing) once the needed years are in, or at the first refresh after it;
+    /// daily while this year, or next year in December, is not.
+    @Test func checksOnThe28thUnlessAYearIsMissing() {
+        func due(_ last: String?, _ now: String, _ calendar: ChineseHolidayCalendar = holidays) -> Bool {
+            ChineseHolidaySource.isCheckDue(lastChecked: last.map(utc), calendar: calendar, now: utc(now))
+        }
+        #expect(due(nil, "2026-10-03T04:00:00Z"))
+        #expect(!due("2026-09-28T01:00:00Z", "2026-10-27T04:00:00Z"))   // before Oct 28
+        #expect(due("2026-09-28T01:00:00Z", "2026-10-27T16:00:00Z"))    // Oct 28 00:00 Beijing
+        #expect(due("2026-09-20T01:00:00Z", "2026-10-03T04:00:00Z"))    // missed Sept 28
+        #expect(!due("2026-10-27T17:00:00Z", "2026-11-10T04:00:00Z"))   // checked on Oct 28
+        #expect(!due("2025-12-28T01:00:00Z", "2026-01-10T04:00:00Z"))   // January looks back to December
+        #expect(due("2026-01-20T01:00:00Z", "2026-02-28T04:00:00Z"))    // February has a 28th too
+        // A missing year: daily.
+        #expect(!due("2026-12-03T00:00:00Z", "2026-12-03T10:00:00Z"))
+        #expect(due("2026-12-02T04:00:00Z", "2026-12-03T04:00:00Z"))
+        #expect(due("2027-01-01T04:00:00Z", "2027-01-02T04:00:00Z"))
+        #expect(due("2026-10-02T04:00:00Z", "2026-10-03T04:00:00Z", .empty))
+    }
 }
 
 @Suite struct DeepSeekBalanceTests {
