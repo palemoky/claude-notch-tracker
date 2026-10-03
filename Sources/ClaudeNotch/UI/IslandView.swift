@@ -45,6 +45,7 @@ struct IslandView: View {
     /// per frame during animations would be pure waste. MainActor because NSImage isn't Sendable.
     @MainActor private static let codexIcon: NSImage? = mark(named: "codex")
     @MainActor private static let antigravityIcon: NSImage? = mark(named: "antigravity")
+    @MainActor private static let deepseekIcon: NSImage? = mark(named: "deepseek")
 
     /// Resolves a bundled provider mark, preferring the packaged .app layout over SwiftPM's.
     private static func mark(named name: String) -> NSImage? {
@@ -68,6 +69,7 @@ struct IslandView: View {
         case .claude: nil               // Claude draws an animated avatar instead of a mark.
         case .codex: codexIcon
         case .antigravity: antigravityIcon
+        case .deepseek: deepseekIcon
         }
     }
 
@@ -134,6 +136,9 @@ struct IslandView: View {
                 }
             }
         }
+        Button(DeepSeekCredentials.isConfigured ? "DeepSeek API Key… ✓" : "DeepSeek API Key…") {
+            DeepSeekKeyPrompt.run { model.deepSeekCredentialsChanged() }
+        }
         Button("Refresh now") { model.refreshNow() }
         Button(model.isPaused ? "Resume tracking" : "Pause tracking") { model.togglePause() }
         Button((model.animateIcon ? "✓ " : "") + "Animate icon") { model.toggleAnimateIcon() }
@@ -154,14 +159,19 @@ struct IslandView: View {
         HStack(spacing: 0) {
             providerIcon
                 .frame(width: iconSize, height: iconSize)
+                .modifier(WhaleSpoutTrigger(
+                    observedAt: model.selectedProvider == .deepseek ? provider.spendObservedAt : nil,
+                    active: model.animateIcon && !model.isPaused,
+                    iconSize: iconSize))
                 .frame(width: wing, height: closedH)
                 .contentShape(Rectangle())
                 // Tap cycles the providers this Mac has. With only one it cycles Clawd's look
                 // instead, which is what the click did before there was more than one provider.
                 .onTapGesture { model.cycleProvider() }
-                .help(model.iconClickSwitchesProvider
-                      ? "Click to switch provider"
-                      : "Click to change the icon")
+                .help((model.iconClickSwitchesProvider
+                       ? "Click to switch provider"
+                       : "Click to change the icon")
+                      + (model.selectedProvider == .deepseek ? " · spouts when your balance drops" : ""))
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(model.iconClickSwitchesProvider ? "Switch provider" : "Change icon")
                 .accessibilityValue(model.selectedProvider.displayName)
@@ -173,12 +183,25 @@ struct IslandView: View {
 
             Color.clear.frame(width: gap, height: closedH)
 
-            HStack(spacing: 5) {
-                Text(provider.primaryUsage.map(Fmt.pct) ?? "—")
-                    .font(.system(size: 12, weight: .semibold)).monospacedDigit()
-                    .foregroundStyle(.white)
-                Ring(fraction: used, state: ringState(for: used), lineWidth: 3)
-                    .frame(width: 14, height: 14)
+            Group {
+                if let pill = provider.pill {
+                    // No fraction to ring (DeepSeek): the value, and a dot in the ring's place.
+                    HStack(spacing: 5) {
+                        Text(pill.text)
+                            .font(.system(size: 12, weight: .semibold)).monospacedDigit()
+                            .foregroundStyle(pill.tint == .critical ? color(.critical) : .white)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                        Circle().fill(color(pill.tint)).frame(width: 7, height: 7)
+                    }
+                } else {
+                    HStack(spacing: 5) {
+                        Text(provider.primaryUsage.map(Fmt.pct) ?? "—")
+                            .font(.system(size: 12, weight: .semibold)).monospacedDigit()
+                            .foregroundStyle(.white)
+                        Ring(fraction: used, state: ringState(for: used), lineWidth: 3)
+                            .frame(width: 14, height: 14)
+                    }
+                }
             }
             .frame(width: wing, height: closedH)
             .opacity(model.isStale ? 0.5 : 1)          // dim when data isn't fresh
@@ -186,7 +209,7 @@ struct IslandView: View {
             .onTapGesture { model.isExpanded.toggle() }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("\(model.selectedProvider.displayName) usage")
-            .accessibilityValue(provider.primaryUsage.map(Fmt.pct) ?? "unknown")
+            .accessibilityValue(provider.pill?.text ?? provider.primaryUsage.map(Fmt.pct) ?? "unknown")
             .accessibilityHint(model.isExpanded ? "Collapses the usage card" : "Expands the usage card")
             .accessibilityAddTraits(.isButton)
         }
@@ -315,12 +338,14 @@ struct IslandView: View {
                         providerLimitTile(metric)
                     }
                     ForEach(Array(snapshot.stats.prefix(remainingSlots))) { metric in
-                        tile(metric.label, metric.value, height: .compact, sub: metric.subtitle)
+                        tile(metric.label, metric.value, height: .compact, sub: metric.subtitle,
+                             tint: metric.tint)
                     }
                 }
                 .opacity(model.isStale ? 0.55 : 1)         // dim live limits when not fresh
                 if chartLayout {
-                    WeekActivityChart(series: snapshot.dailySeries, title: snapshot.chartTitle)
+                    WeekActivityChart(series: snapshot.dailySeries, title: snapshot.chartTitle,
+                                      currency: snapshot.currency)
                         .opacity(model.isStale ? 0.55 : 1)
                 }
                 if let message = snapshot.statusMessage {
@@ -362,7 +387,8 @@ struct IslandView: View {
             if providerHasNothingToShow {
                 providerPlaceholder
             } else if chartHere {
-                WeekActivityChart(series: snapshot.dailySeries, title: snapshot.chartTitle)
+                WeekActivityChart(series: snapshot.dailySeries, title: snapshot.chartTitle,
+                                  currency: snapshot.currency)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 HStack(spacing: 8) {
@@ -398,7 +424,7 @@ struct IslandView: View {
     }
 
     private func summaryPrimary(cost: Double?, tokens: Int?) -> String {
-        if let cost { return Fmt.usd(cost) }
+        if let cost { return Fmt.money(cost, currency: provider.currency) }
         if let tokens { return Fmt.tokens(tokens) }
         return "—"
     }
@@ -463,7 +489,7 @@ struct IslandView: View {
                 .foregroundStyle(.white.opacity(muted ? 0.5 : 0.85)).lineLimit(1).truncationMode(.tail)
             Spacer(minLength: 8)
             if let cost, let tokens {
-                (Text(Fmt.usd(cost)).foregroundStyle(.white)
+                (Text(Fmt.money(cost, currency: provider.currency)).foregroundStyle(.white)
                     + Text("  ·  \(Fmt.tokens(tokens))").foregroundStyle(.white.opacity(0.45)))
                     .font(.system(size: 12, weight: .semibold)).monospacedDigit()
                     .lineLimit(1).minimumScaleFactor(0.7)
@@ -471,7 +497,7 @@ struct IslandView: View {
                 Text(Fmt.tokens(tokens)).foregroundStyle(.white)
                     .font(.system(size: 12, weight: .semibold)).monospacedDigit()
             } else if let cost {
-                Text(Fmt.usd(cost)).foregroundStyle(.white)
+                Text(Fmt.money(cost, currency: provider.currency)).foregroundStyle(.white)
                     .font(.system(size: 12, weight: .semibold)).monospacedDigit()
             } else if let last {
                 Text(Fmt.ago(last)).font(.system(size: 11, weight: .medium))
@@ -518,11 +544,12 @@ struct IslandView: View {
     }
 
     // A plain value tile, with an optional muted subline (e.g. a projection).
-    private func tile(_ label: String, _ value: String, height: TileHeight, sub: String? = nil) -> some View {
+    private func tile(_ label: String, _ value: String, height: TileHeight, sub: String? = nil,
+                      tint: UsageTint? = nil) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(label).font(.system(size: 10)).foregroundStyle(.white.opacity(0.5))
             Text(value).font(.system(size: height.valueSize, weight: .medium)).monospacedDigit()
-                .foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.7)
+                .foregroundStyle(tint.map(color) ?? .white).lineLimit(1).minimumScaleFactor(0.7)
             if let sub {
                 Text(sub).font(.system(size: 9.5)).monospacedDigit()
                     .foregroundStyle(.white.opacity(0.4)).lineLimit(1).minimumScaleFactor(0.7)
@@ -545,6 +572,16 @@ struct IslandView: View {
     private func barColor(_ used: Double) -> Color {
         switch ringState(for: used) {
         case .ok: return .white
+        case .warn: return Color(red: 0.96, green: 0.70, blue: 0.20)
+        case .critical: return Color(red: 0.92, green: 0.34, blue: 0.34)
+        }
+    }
+
+    /// A state colour: the warn/critical of the limit tiles, and green for a good state, since
+    /// white — "fine" for a percent — says nothing next to a status dot.
+    private func color(_ tint: UsageTint) -> Color {
+        switch tint {
+        case .ok: return Color(red: 0.36, green: 0.80, blue: 0.48)
         case .warn: return Color(red: 0.96, green: 0.70, blue: 0.20)
         case .critical: return Color(red: 0.92, green: 0.34, blue: 0.34)
         }

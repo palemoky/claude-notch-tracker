@@ -15,6 +15,13 @@ let package = Package(
                 .copy("Resources/codex.svg"),
                 .copy("Resources/codex.png"),
                 .copy("Resources/antigravity.png"),
+                // DeepSeek's mark from LobeIcons (MIT, see LobeIcons-LICENSE.txt).
+                .copy("Resources/deepseek.png"),
+                .copy("Resources/LobeIcons-LICENSE.txt"),
+                // China's statutory holidays for DeepSeek's off-peak rule, from holiday-cn (MIT).
+                // Later years are fetched at runtime; see ChineseHolidaySource.
+                .copy("Resources/holiday-cn-2026.json"),
+                .copy("Resources/holiday-cn-LICENSE.txt"),
             ],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
