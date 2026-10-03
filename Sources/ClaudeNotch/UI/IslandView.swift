@@ -70,6 +70,7 @@ struct IslandView: View {
         case .codex: codexIcon
         case .antigravity: antigravityIcon
         case .deepseek: deepseekIcon
+        case .opencodeGo: nil   // no bundled mark yet: providerIcon falls back to the SF symbol.
         }
     }
 

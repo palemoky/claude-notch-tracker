@@ -36,6 +36,21 @@ The executable is discovered in this order:
 Only configure `CODEX_NOTCH_BINARY` with a trusted executable. The app launches the selected binary
 with fixed `app-server --stdio` arguments and never invokes a shell.
 
+## opencode-go
+
+opencode-go reads the server's own meters first, with local history as the fallback:
+
+- **Web (preferred).** The `opencode.ai` browser session cookie is read from the local cookie
+  store (same mechanism as the Claude provider) and used for `GET /console/api/orgs` (workspace
+  ID), then `GET /console/api/go/status` with `x-org-id` (5-hour / weekly / monthly meters plus
+  `endsAt` renewals) and `GET /console/api/billing/status` (prepaid Zen balance). With
+  `OPENCODE_API_KEY` set, `GET /zen/go/v1/usage` is used instead. The provider is offered once
+  `~/.local/share/opencode/auth.json` carries a key or `opencode.db` history exists (file
+  checks only, never the Keychain); a failed round trip keeps the last good reading.
+- **Local.** `~/.local/share/opencode/opencode.db` (`session_message`, falling back to the older
+  `message`/`part` tables) is read for per-turn costs, bucketed into rolling 5-hour, UTC-week
+  and calendar-month windows. Like the Claude logs, this is labelled `local`.
+
 ## Antigravity
 
 The Antigravity provider draws on two independent sources, so one failing does not blank the panel.

@@ -25,12 +25,14 @@ actor DeepSeekUsageProvider {
     func resetCredentials() { cachedKey = nil }
 
     func fetch(now: Date = Date()) async -> ProviderUsageSnapshot {
-        await holidays.refreshIfDue(now: now)
-        let calendar = await holidays.calendar
         if cachedKey == nil { cachedKey = DeepSeekCredentials.read() }
         guard let key = cachedKey else {
             return .unavailable(.deepseek, message: UsageProviderID.deepseek.setupHint)
         }
+        // Holiday dates only matter with a key: without one this would ping jsDelivr on
+        // every poll of an unconfigured provider.
+        await holidays.refreshIfDue(now: now)
+        let calendar = await holidays.calendar
 
         var message: String?
         do {
@@ -45,7 +47,10 @@ actor DeepSeekUsageProvider {
             cachedKey = nil
             message = "DeepSeek rejected the API key"
         } catch {
-            message = "DeepSeek: \(error.localizedDescription)"
+            // Static text on purpose: surfacing raw network errors would pipe any future
+            // payload-bearing error into the pill (the Antigravity provider follows the
+            // same rule for endpoint URLs).
+            message = "DeepSeek unreachable"
         }
 
         guard let balance = lastBalance else {

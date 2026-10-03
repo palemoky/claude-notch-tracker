@@ -7,6 +7,7 @@ final class AppModel {
     private(set) var codexSnapshot: ProviderUsageSnapshot = .unavailable(.codex)
     private(set) var antigravitySnapshot: ProviderUsageSnapshot = .unavailable(.antigravity)
     private(set) var deepseekSnapshot: ProviderUsageSnapshot = .unavailable(.deepseek)
+    private(set) var opencodeGoSnapshot: ProviderUsageSnapshot = .unavailable(.opencodeGo)
     /// The stored choice, or Claude. Note this is the *saved* preference: `start()` may show a
     /// different provider when the saved one isn't installed, without overwriting this, so the
     /// choice comes back if the tool is reinstalled.
@@ -56,6 +57,7 @@ final class AppModel {
     private let claudeAPI = ClaudeAPIService()
     private let codexProvider = CodexUsageProvider()
     private let antigravityProvider = AntigravityUsageProvider()
+    private let opencodeGoProvider = OpencodeGoUsageProvider()
     private let deepseekProvider = DeepSeekUsageProvider()
     private let lifetimeScanner = LifetimeScanner()
     private var watcher: LogWatcher?
@@ -124,6 +126,7 @@ final class AppModel {
         case .antigravity: antigravitySnapshot.maximumUsage
         // No limit to run into: peak hours, which bill double, are what quicken the icon.
         case .deepseek: deepseekSnapshot.pill?.tint == .warn ? 0.6 : 0
+        case .opencodeGo: opencodeGoSnapshot.maximumUsage
         }
     }
 
@@ -174,6 +177,7 @@ final class AppModel {
         case .codex: snapshot = codexSnapshot
         case .antigravity: snapshot = antigravitySnapshot
         case .deepseek: snapshot = deepseekSnapshot
+        case .opencodeGo: snapshot = opencodeGoSnapshot
         }
         // Picking a provider that isn't installed is a setup state, not a failure: say what to do
         // instead of showing the raw "executable not found" in warning amber.
@@ -284,6 +288,7 @@ final class AppModel {
                 self?.fetchCodexUsage()
                 self?.fetchAntigravityUsage()
                 self?.fetchDeepSeekUsage()
+                self?.fetchOpencodeGoUsage()
             }
         }
         Task.detached(priority: .utility) { [weak self] in
@@ -294,6 +299,7 @@ final class AppModel {
         fetchCodexUsage()
         fetchAntigravityUsage()
         fetchDeepSeekUsage()
+        fetchOpencodeGoUsage()
         scanLifetime()
         restartRotation()
         lifetimeTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
@@ -318,6 +324,7 @@ final class AppModel {
         case .codex: fetchCodexUsage()
         case .antigravity: fetchAntigravityUsage(force: true)
         case .deepseek: fetchDeepSeekUsage()
+        case .opencodeGo: fetchOpencodeGoUsage()
         }
     }
 
@@ -329,6 +336,7 @@ final class AppModel {
             fetchCodexUsage()
             fetchAntigravityUsage()
             fetchDeepSeekUsage()
+            fetchOpencodeGoUsage()
         }
     }
     func selectProvider(_ provider: UsageProviderID) {
@@ -348,6 +356,7 @@ final class AppModel {
         case .codex: fetchCodexUsage()
         case .antigravity: fetchAntigravityUsage()
         case .deepseek: fetchDeepSeekUsage()
+        case .opencodeGo: fetchOpencodeGoUsage()
         }
     }
 
@@ -366,6 +375,7 @@ final class AppModel {
             fetchCodexUsage()
             fetchAntigravityUsage()
             fetchDeepSeekUsage()
+            fetchOpencodeGoUsage()
         }
     }
 
@@ -454,6 +464,13 @@ final class AppModel {
         guard !isPaused, isPolled(.deepseek) else { return }
         Task { [deepseekProvider] in
             self.deepseekSnapshot = await deepseekProvider.fetch()
+        }
+    }
+
+    func fetchOpencodeGoUsage() {
+        guard !isPaused, isPolled(.opencodeGo) else { return }
+        Task { [opencodeGoProvider] in
+            self.opencodeGoSnapshot = await opencodeGoProvider.fetch()
         }
     }
 

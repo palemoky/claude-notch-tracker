@@ -42,11 +42,18 @@ enum ProviderAvailability {
         case .codex: CodexPaths.executable() != nil
         // Either half is enough: the CLI alone gives quota rings, and local stores alone still
         // fill the chart and tiles when `agy` is missing.
+        // A bare ~/.gemini dir (e.g. left by the Gemini CLI) is not Antigravity: require
+        // the executable or at least one conversation store, so the icon click can never
+        // land on an empty placeholder the way Codex and DeepSeek never do.
         case .antigravity:
-            AntigravityPaths.executable() != nil || !AntigravityPaths.dataDirectories.isEmpty
+            AntigravityPaths.executable() != nil || !AntigravityPaths.conversationStores().isEmpty
         // A key in the environment or one saved from the menu; the saved one is known from a
         // flag, so this never reads the Keychain.
         case .deepseek: DeepSeekCredentials.isConfigured
+        // Local gateway key or local history: file-existence only, never the Keychain.
+        // The web-cookie path upgrades the numbers once offered; it needs no new secret.
+        case .opencodeGo:
+            OpencodeGoPaths.hasAuth || OpencodeGoPaths.databaseExists
         }
     }
 }

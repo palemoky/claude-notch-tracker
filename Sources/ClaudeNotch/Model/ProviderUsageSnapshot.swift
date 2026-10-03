@@ -5,6 +5,7 @@ enum UsageProviderID: String, CaseIterable, Identifiable, Sendable {
     case codex
     case antigravity
     case deepseek
+    case opencodeGo
 
     var id: String { rawValue }
 
@@ -14,6 +15,7 @@ enum UsageProviderID: String, CaseIterable, Identifiable, Sendable {
         case .codex: "Codex"
         case .antigravity: "Antigravity"
         case .deepseek: "DeepSeek"
+        case .opencodeGo: "opencode-go"
         }
     }
 
@@ -24,6 +26,7 @@ enum UsageProviderID: String, CaseIterable, Identifiable, Sendable {
         case .codex: "Install the Codex CLI to track usage here"
         case .antigravity: "Install the Antigravity CLI to track usage here"
         case .deepseek: "Add a DeepSeek API key from the right-click menu"
+        case .opencodeGo: "Use opencode locally or sign in to opencode.ai in your browser"
         }
     }
 
@@ -33,6 +36,7 @@ enum UsageProviderID: String, CaseIterable, Identifiable, Sendable {
         case .codex: "terminal.fill"
         case .antigravity: "mountain.2.fill"
         case .deepseek: "fish.fill"
+        case .opencodeGo: "chevron.left.forwardslash.chevron.right"
         }
     }
 }
@@ -109,6 +113,9 @@ struct ProviderUsageSnapshot: Equatable, Sendable {
     var alternateSessionsTitle: String?
     var alternateSessions: [UsageSessionMetric] = []
     var planName: String?
+    /// When the current billing period ends, when the server reports it (opencode-go's
+    /// `access.endsAt`). Not every provider has one.
+    var renewsAt: Date?
     var source: String?
     var fetchedAt: Date?
     var statusMessage: String?
