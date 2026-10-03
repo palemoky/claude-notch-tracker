@@ -97,6 +97,7 @@ struct IslandView: View {
         }
         .animation(.spring(response: 0.6, dampingFraction: 1.0), value: expanded)
         .animation(.easeInOut(duration: 0.3), value: used)
+        .animation(.easeInOut(duration: 0.35), value: model.selectedProvider)
     }
 
     // Right-click menu (replaces the menu-bar item).
@@ -136,6 +137,14 @@ struct IslandView: View {
                 }
             }
         }
+        Menu("Rotate providers") {
+            ForEach(AppModel.rotationChoices, id: \.self) { seconds in
+                let title = seconds == 0 ? "Off" : (seconds < 60 ? "Every \(seconds) s" : "Every \(seconds / 60) min")
+                Button((model.rotationInterval == seconds ? "✓ " : "") + title) {
+                    model.setRotationInterval(seconds)
+                }
+            }
+        }
         Button(DeepSeekCredentials.isConfigured ? "DeepSeek API Key… ✓" : "DeepSeek API Key…") {
             DeepSeekKeyPrompt.run { model.deepSeekCredentialsChanged() }
         }
@@ -158,6 +167,8 @@ struct IslandView: View {
     private var notchRow: some View {
         HStack(spacing: 0) {
             providerIcon
+                .id(model.selectedProvider)          // cross-fades on a provider switch
+                .transition(.opacity)
                 .frame(width: iconSize, height: iconSize)
                 .modifier(WhaleSpoutTrigger(
                     observedAt: model.selectedProvider == .deepseek ? provider.spendObservedAt : nil,
@@ -203,6 +214,8 @@ struct IslandView: View {
                     }
                 }
             }
+            .id(model.selectedProvider)
+            .transition(.opacity)
             .frame(width: wing, height: closedH)
             .opacity(model.isStale ? 0.5 : 1)          // dim when data isn't fresh
             .contentShape(Rectangle())

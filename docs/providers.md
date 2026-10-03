@@ -157,6 +157,14 @@ GET https://api.deepseek.com/user/balance   (Authorization: Bearer <key>)
 DeepSeek has no limit window, so instead of a percent ring the pill shows the balance and a dot
 for the phase: green off-peak, amber at peak, red when the balance is too low for API calls.
 
+## Rotation
+
+*Rotate providers* in the right-click menu switches the island to the next available provider
+every 10 s, 30 s or minute. While it is on, every available provider is polled in the
+background (normally only the one on screen is), so a switch never lands on a stale or empty
+card. Rotation holds while the card is open, and a provider picked by hand gets a full interval.
+Rotated-to providers are not saved as the choice; the saved one is still what the user picked.
+
 ## Validation
 
 Run the full test suite:

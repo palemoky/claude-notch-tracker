@@ -73,6 +73,8 @@ your spend and sessions sit behind. Click away and it glides shut. No Dock icon,
   green off-peak, amber at peak (09:00–12:00 and 14:00–18:00 Beijing time on working days, when
   DeepSeek bills double). Chinese public holidays count as off-peak, as DeepSeek's pricing says.
   Spend today and this week is observed from the balance going down, and labelled so.
+- **Rotate providers.** With more than one provider, the island can cycle through them on its
+  own every 10 s, 30 s or minute. It holds still while the card is open.
 - **Two pages, one swipe.** Limits up front. Swipe (or tap the dots) to a local detail page with
   today versus all-time spend, plus your live sessions.
 - **Named sessions.** Your actual **conversation titles** from the sidebar, with today's spend per
@@ -154,7 +156,7 @@ Command Line Tools.
 - **Click the left icon** to cycle the providers installed on your Mac (Claude, Codex,
   Antigravity, and DeepSeek once it has a key).
 - **Right-click** the island for Provider, Icon (Clawd, mono, Spark, Claude only), DeepSeek API
-  Key, Pause, Animate icon, Hide in full screen, Launch at Login, Check for Updates, GitHub
+  Key, Rotate providers, Pause, Animate icon, Hide in full screen, Launch at Login, Check for Updates, GitHub
   Repository, and Quit.
 
 ## Credits
