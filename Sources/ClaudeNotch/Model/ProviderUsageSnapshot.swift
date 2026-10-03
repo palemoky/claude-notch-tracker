@@ -4,6 +4,8 @@ enum UsageProviderID: String, CaseIterable, Identifiable, Sendable {
     case claude
     case codex
     case antigravity
+    case deepseek
+    case opencodeGo
 
     var id: String { rawValue }
 
@@ -12,6 +14,8 @@ enum UsageProviderID: String, CaseIterable, Identifiable, Sendable {
         case .claude: "Claude"
         case .codex: "Codex"
         case .antigravity: "Antigravity"
+        case .deepseek: "DeepSeek"
+        case .opencodeGo: "opencode-go"
         }
     }
 
@@ -21,6 +25,8 @@ enum UsageProviderID: String, CaseIterable, Identifiable, Sendable {
         case .claude: "Sign in to Claude to see usage here"
         case .codex: "Install the Codex CLI to track usage here"
         case .antigravity: "Install the Antigravity CLI to track usage here"
+        case .deepseek: "Add a DeepSeek API key from the right-click menu"
+        case .opencodeGo: "Use opencode locally or sign in to opencode.ai in your browser"
         }
     }
 
@@ -29,6 +35,8 @@ enum UsageProviderID: String, CaseIterable, Identifiable, Sendable {
         case .claude: "sparkles"
         case .codex: "terminal.fill"
         case .antigravity: "mountain.2.fill"
+        case .deepseek: "fish.fill"
+        case .opencodeGo: "chevron.left.forwardslash.chevron.right"
         }
     }
 }
@@ -38,13 +46,24 @@ struct UsageLimitMetric: Equatable, Sendable, Identifiable {
     let label: String
     let usedFraction: Double?
     let resetsAt: Date?
+    /// Absolute spend for this window, e.g. "$3.00 of $12.00" (opencode-go's micro-cent meters).
+    /// nil whenever only a bare percent is known, so every other provider renders unchanged.
+    let subtitle: String?
 
-    init(id: String, label: String, usedFraction: Double?, resetsAt: Date?) {
+    init(id: String, label: String, usedFraction: Double?, resetsAt: Date?,
+         subtitle: String? = nil) {
         self.id = id
         self.label = label
         self.usedFraction = usedFraction.map { min(1, max(0, $0)) }
         self.resetsAt = resetsAt
+        self.subtitle = subtitle
     }
+}
+
+/// Colour for a value that carries a state of its own rather than a usage fraction, e.g.
+/// DeepSeek's peak/off-peak phase. Matches the ring's ok/warn/critical palette.
+enum UsageTint: Equatable, Sendable {
+    case ok, warn, critical
 }
 
 struct UsageStatMetric: Equatable, Sendable, Identifiable {
@@ -52,6 +71,14 @@ struct UsageStatMetric: Equatable, Sendable, Identifiable {
     let label: String
     let value: String
     let subtitle: String?
+    var tint: UsageTint? = nil
+}
+
+/// What the closed pill shows for a provider with no usage fraction to ring: a short value (a
+/// balance) and a status dot in place of the ring.
+struct UsagePill: Equatable, Sendable {
+    let text: String
+    let tint: UsageTint
 }
 
 struct UsageSessionMetric: Equatable, Sendable, Identifiable {
@@ -91,9 +118,19 @@ struct ProviderUsageSnapshot: Equatable, Sendable {
     var alternateSessionsTitle: String?
     var alternateSessions: [UsageSessionMetric] = []
     var planName: String?
+    /// When the current billing period ends, when the server reports it (opencode-go's
+    /// `access.endsAt`). Not every provider has one.
+    var renewsAt: Date?
     var source: String?
     var fetchedAt: Date?
     var statusMessage: String?
+    /// Replaces the closed pill's percent + ring (DeepSeek's balance + pricing phase).
+    var pill: UsagePill?
+    /// ISO code for every money figure in this snapshot; nil = USD (Claude's local logs).
+    var currency: String?
+    /// When money was last seen leaving the account (DeepSeek's balance dropping); the icon
+    /// reacts to a recent one.
+    var spendObservedAt: Date?
 
     /// The headline fraction for the collapsed pill: the FIRST limit's value, nil when that limit
     /// has no value yet. Deliberately not "first non-nil" — falling through to a later limit would

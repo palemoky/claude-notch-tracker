@@ -36,6 +36,21 @@ The executable is discovered in this order:
 Only configure `CODEX_NOTCH_BINARY` with a trusted executable. The app launches the selected binary
 with fixed `app-server --stdio` arguments and never invokes a shell.
 
+## opencode-go
+
+opencode-go reads the server's own meters first, with local history as the fallback:
+
+- **Web (preferred).** The `opencode.ai` browser session cookie is read from the local cookie
+  store (same mechanism as the Claude provider) and used for `GET /console/api/orgs` (workspace
+  ID), then `GET /console/api/go/status` with `x-org-id` (5-hour / weekly / monthly meters plus
+  `endsAt` renewals) and `GET /console/api/billing/status` (prepaid Zen balance). With
+  `OPENCODE_API_KEY` set, `GET /zen/go/v1/usage` is used instead. The provider is offered once
+  `~/.local/share/opencode/auth.json` carries a key or `opencode.db` history exists (file
+  checks only, never the Keychain); a failed round trip keeps the last good reading.
+- **Local.** `~/.local/share/opencode/opencode.db` (`session_message`, falling back to the older
+  `message`/`part` tables) is read for per-turn costs, bucketed into rolling 5-hour, UTC-week
+  and calendar-month windows. Like the Claude logs, this is labelled `local`.
+
 ## Antigravity
 
 The Antigravity provider draws on two independent sources, so one failing does not blank the panel.
@@ -128,6 +143,42 @@ triggers an immediate refresh.
   public key.
 - The app is not sandboxed because its core features require read-only access to browser session
   stores, Claude Code logs, and the locally installed Codex executable.
+
+## DeepSeek
+
+DeepSeek's API has a balance endpoint and nothing else about usage, so that is all the provider
+asks for:
+
+```
+GET https://api.deepseek.com/user/balance   (Authorization: Bearer <key>)
+```
+
+- **The key** comes from `DEEPSEEK_API_KEY` in the app's environment, or from the right-click
+  menu's *DeepSeek API Key…*, which stores it as a generic password in the login Keychain. It is
+  read once per launch and sent nowhere but api.deepseek.com. The provider is offered only once a
+  key exists, which `ProviderAvailability` learns from a flag rather than a Keychain read.
+- **The wallet** shown is the funded one: an account can hold a CNY and a USD wallet, usually
+  with one empty, and the first listed is not always the one with money in it.
+- **Spend** is observed, not reported: `DeepSeekSpendLedger` counts each fall in the balance
+  between readings as spend on the day it was seen, and each rise as a top-up, never netted
+  against spend. Time the app wasn't running lands on the next reading's day.
+- **Peak and off-peak** follow DeepSeek's published rule: 09:00–12:00 and 14:00–18:00 Beijing
+  time, Monday to Friday, excluding Chinese statutory holidays. The holiday dates ship for the
+  current year (`holiday-cn-<year>.json`) and are refreshed on the 28th of each month (Beijing time, or at the next launch if missed) from
+  [holiday-cn](https://github.com/NateScarlet/holiday-cn) over jsDelivr, so a new year's
+  arrangement arrives without a release. While a needed year is missing (the current one, or
+  next year in December) the check runs daily instead, so the notice lands before New Year's Day. A year with no data falls back to the weekday rule.
+
+DeepSeek has no limit window, so instead of a percent ring the pill shows the balance and a dot
+for the phase: green off-peak, amber at peak, red when the balance is too low for API calls.
+
+## Rotation
+
+*Rotate providers* in the right-click menu switches the island to the next available provider
+every 10 s, 30 s or minute. While it is on, every available provider is polled in the
+background (normally only the one on screen is), so a switch never lands on a stale or empty
+card. Rotation holds while the card is open, and a provider picked by hand gets a full interval.
+Rotated-to providers are not saved as the choice; the saved one is still what the user picked.
 
 ## Validation
 
