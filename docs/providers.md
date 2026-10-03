@@ -129,6 +129,14 @@ triggers an immediate refresh.
 - The app is not sandboxed because its core features require read-only access to browser session
   stores, Claude Code logs, and the locally installed Codex executable.
 
+## Rotation
+
+*Rotate providers* in the right-click menu switches the island to the next available provider
+every 10 s, 30 s or minute. While it is on, every available provider is polled in the
+background (normally only the one on screen is), so a switch never lands on a stale or empty
+card. Rotation holds while the card is open, and a provider picked by hand gets a full interval.
+Rotated-to providers are not saved as the choice; the saved one is still what the user picked.
+
 ## Validation
 
 Run the full test suite:

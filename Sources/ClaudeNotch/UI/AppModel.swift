@@ -14,7 +14,14 @@ final class AppModel {
     ) ?? .claude
     /// Projects worked in today with their spend (from the logs), most-recently-active first.
     var sessionsToday: [ProjectUsage] { snapshot.projectsToday }
-    var isExpanded = false
+    var isExpanded = false {
+        // Rotation holds still while the card is open, and the provider on screen gets a full
+        // interval once it closes rather than switching the instant it does.
+        didSet { if oldValue && !isExpanded { restartRotation() } }
+    }
+    /// Seconds between automatic provider switches; 0 = off. Persisted; default off.
+    private(set) var rotationInterval: Int = UserDefaults.standard.integer(forKey: "rotationInterval")
+    static let rotationChoices = [0, 10, 30, 60]
     var isPaused = false
     var claudeRunning = false
     var avatarStyle: AvatarStyle = AvatarStyle.selected
@@ -54,6 +61,7 @@ final class AppModel {
     private var limitsTimer: Timer?
     private var providerTimer: Timer?
     private var lifetimeTimer: Timer?
+    private var rotationTimer: Timer?
     /// mtime of each log file the last time we parsed it, so the periodic sweep re-reads only
     /// files that actually grew and skips the rest.
     private var parsedMTimes: [URL: Date] = [:]
@@ -278,6 +286,7 @@ final class AppModel {
         fetchCodexUsage()
         fetchAntigravityUsage()
         scanLifetime()
+        restartRotation()
         lifetimeTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.scanLifetime() }
         }
@@ -312,28 +321,83 @@ final class AppModel {
         }
     }
     func selectProvider(_ provider: UsageProviderID) {
-        selectedProvider = provider
         UserDefaults.standard.set(provider.rawValue, forKey: "selectedProvider")
+        show(provider)
+        restartRotation()   // a choice made by hand gets a full interval on screen
+    }
+
+    /// Puts a provider on screen without saving it as the choice — what rotation does, so the
+    /// saved provider is still the one the user picked.
+    private func show(_ provider: UsageProviderID) {
+        selectedProvider = provider
+        // Rotating providers are already polled in the background; this is only for the rest.
+        guard !isRotating else { return }
         switch provider {
         case .claude: fetchLimits()
         case .codex: fetchCodexUsage()
         case .antigravity: fetchAntigravityUsage()
         }
     }
+
+    // MARK: rotation
+
+    /// Rotation is on and there is something to rotate between.
+    var isRotating: Bool { rotationInterval > 0 && ProviderAvailability.available().count > 1 }
+
+    func setRotationInterval(_ seconds: Int) {
+        rotationInterval = seconds
+        UserDefaults.standard.set(seconds, forKey: "rotationInterval")
+        restartRotation()
+        // Bring every rotating provider up to date now, rather than one poll after it appears.
+        if isRotating {
+            fetchLimits()
+            fetchCodexUsage()
+            fetchAntigravityUsage()
+        }
+    }
+
+    private func restartRotation() {
+        rotationTimer?.invalidate()
+        rotationTimer = nil
+        guard rotationInterval > 0 else { return }
+        rotationTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(rotationInterval),
+                                             repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.rotate() }
+        }
+    }
+
+    private func rotate() {
+        guard isRotating, !isExpanded, !isPaused,
+              let next = Self.provider(after: selectedProvider,
+                                       in: ProviderAvailability.available()) else { return }
+        show(next)
+    }
+
+    /// The one after `current`, wrapping; the first when `current` isn't among them; nil when
+    /// there is nothing else to switch to.
+    nonisolated static func provider(after current: UsageProviderID,
+                                     in providers: [UsageProviderID]) -> UsageProviderID? {
+        guard providers.count > 1 else { return nil }
+        guard let index = providers.firstIndex(of: current) else { return providers.first }
+        return providers[(index + 1) % providers.count]
+    }
+
+    /// Whether a provider is fetched: the one on screen, plus every rotating one so a switch never
+    /// lands on a stale or empty card. Everything else stays unpolled, as before rotation.
+    private func isPolled(_ provider: UsageProviderID) -> Bool {
+        selectedProvider == provider
+            || (isRotating && ProviderAvailability.isAvailable(provider))
+    }
     /// Icon click. Cycles the providers this Mac actually has, so the click can't land on a tool
     /// that isn't installed. With only one such provider there is nothing to switch between, so
     /// the click returns to its original meaning and cycles Clawd's look instead.
     func cycleProvider() {
-        let providers = ProviderAvailability.available()
-        guard providers.count > 1 else {
+        guard let next = Self.provider(after: selectedProvider,
+                                       in: ProviderAvailability.available()) else {
             if selectedProvider == .claude { cycleAvatar() }
             return
         }
-        guard let index = providers.firstIndex(of: selectedProvider) else {
-            selectProvider(providers[0])
-            return
-        }
-        selectProvider(providers[(index + 1) % providers.count])
+        selectProvider(next)
     }
 
     /// What the icon click will do, for the tooltip and the accessibility hint.
@@ -353,21 +417,21 @@ final class AppModel {
     /// Only replaces the last-known-good limits with a response that actually carries a
     /// session %, so a partial/failed read can never clobber correct data.
     func fetchLimits(force: Bool = false) {
-        guard !isPaused, selectedProvider == .claude else { return }
+        guard !isPaused, isPolled(.claude) else { return }
         Task { [claudeAPI] in
             if let l = await claudeAPI.fetch(force: force), l.sessionPct != nil { self.applyLimits(l) }
         }
     }
 
     func fetchCodexUsage() {
-        guard !isPaused, selectedProvider == .codex else { return }
+        guard !isPaused, isPolled(.codex) else { return }
         Task { [codexProvider] in
             self.codexSnapshot = await codexProvider.fetch()
         }
     }
 
     func fetchAntigravityUsage(force: Bool = false) {
-        guard !isPaused, selectedProvider == .antigravity else { return }
+        guard !isPaused, isPolled(.antigravity) else { return }
         Task { [antigravityProvider] in
             self.antigravitySnapshot = await antigravityProvider.fetch(force: force)
         }

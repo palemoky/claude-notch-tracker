@@ -95,6 +95,7 @@ struct IslandView: View {
         }
         .animation(.spring(response: 0.6, dampingFraction: 1.0), value: expanded)
         .animation(.easeInOut(duration: 0.3), value: used)
+        .animation(.easeInOut(duration: 0.35), value: model.selectedProvider)
     }
 
     // Right-click menu (replaces the menu-bar item).
@@ -134,6 +135,14 @@ struct IslandView: View {
                 }
             }
         }
+        Menu("Rotate providers") {
+            ForEach(AppModel.rotationChoices, id: \.self) { seconds in
+                let title = seconds == 0 ? "Off" : (seconds < 60 ? "Every \(seconds) s" : "Every \(seconds / 60) min")
+                Button((model.rotationInterval == seconds ? "✓ " : "") + title) {
+                    model.setRotationInterval(seconds)
+                }
+            }
+        }
         Button("Refresh now") { model.refreshNow() }
         Button(model.isPaused ? "Resume tracking" : "Pause tracking") { model.togglePause() }
         Button((model.animateIcon ? "✓ " : "") + "Animate icon") { model.toggleAnimateIcon() }
@@ -153,6 +162,8 @@ struct IslandView: View {
     private var notchRow: some View {
         HStack(spacing: 0) {
             providerIcon
+                .id(model.selectedProvider)          // cross-fades on a provider switch
+                .transition(.opacity)
                 .frame(width: iconSize, height: iconSize)
                 .frame(width: wing, height: closedH)
                 .contentShape(Rectangle())
@@ -180,6 +191,8 @@ struct IslandView: View {
                 Ring(fraction: used, state: ringState(for: used), lineWidth: 3)
                     .frame(width: 14, height: 14)
             }
+            .id(model.selectedProvider)
+            .transition(.opacity)
             .frame(width: wing, height: closedH)
             .opacity(model.isStale ? 0.5 : 1)          // dim when data isn't fresh
             .contentShape(Rectangle())

@@ -69,6 +69,8 @@ your spend and sessions sit behind. Click away and it glides shut. No Dock icon,
   windows, token totals, credits, and recent tasks come from the official local `codex app-server`
   interface. Antigravity quota comes from the CLI's own read-only `/usage` command, which spends
   no quota to ask, with tokens, models, and projects read from its local conversation stores.
+- **Rotate providers.** With more than one provider, the island can cycle through them on its
+  own every 10 s, 30 s or minute. It holds still while the card is open.
 - **Two pages, one swipe.** Limits up front. Swipe (or tap the dots) to a local detail page with
   today versus all-time spend, plus your live sessions.
 - **Named sessions.** Your actual **conversation titles** from the sidebar, with today's spend per
@@ -149,8 +151,9 @@ Command Line Tools.
 - **Tap the sessions block** to flip between today's active sessions and all-time top projects.
 - **Click the left icon** to cycle the providers installed on your Mac (Claude, Codex,
   Antigravity).
-- **Right-click** the island for Provider, Icon (Clawd, mono, Spark, Claude only), Pause, Animate
-  icon, Hide in full screen, Launch at Login, Check for Updates, GitHub Repository, and Quit.
+- **Right-click** the island for Provider, Icon (Clawd, mono, Spark, Claude only), Rotate
+  providers, Pause, Animate icon, Hide in full screen, Launch at Login, Check for Updates, GitHub
+  Repository, and Quit.
 
 ## Credits
 
