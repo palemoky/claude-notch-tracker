@@ -3,6 +3,28 @@
     <channel>
         <title>Claude Notch</title>
         <item>
+            <title>0.4.0</title>
+            <description><![CDATA[
+                <h2>Two more providers, and rotation</h2>
+                <ul>
+                    <li><b>DeepSeek</b> joins the island: your balance in the pill with a green/amber dot for off-peak vs peak pricing (peak bills double 09:00–12:00 and 14:00–18:00 Beijing time, holidays off-peak), spend observed from the balance going down, and a spouting whale when money leaves. Set the key from the right-click menu.</li>
+                    <li><b>opencode-go</b> joins too: real 5-hour / weekly / monthly meters read from your opencode.ai browser session (or key), with local history as the fallback, plus renewals, absolute spend, a local week chart, sessions and top model.</li>
+                    <li><b>Rotate providers</b>: the island can cycle through your providers on its own every 10 s, 30 s or minute (default off). It holds still while the card is open and never overwrites your saved choice.</li>
+                    <li>Turn pages with a <b>two-finger trackpad swipe</b>, not just click-drags</li>
+                    <li>The Claude Code login is now read without raising a <b>Keychain prompt</b> every few hours</li>
+                    <li>An empty Antigravity install (bare <tt>~/.gemini</tt>, no CLI or conversations) no longer catches the icon click, like Codex and DeepSeek</li>
+                </ul>
+                <p>DeepSeek, rotation, the swipe and the Keychain fix were contributed by <a href="https://github.com/palemoky">@palemoky</a> — report plus four PRs. Thank you!</p>
+            ]]></description>
+            <pubDate>Sat, 03 Oct 2026 22:41:51 +0000</pubDate>
+            <sparkle:version>0.4.0</sparkle:version>
+            <sparkle:shortVersionString>0.4.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <!-- Filled in at release time: length + edSignature come from the signed zip (sign_update). -->
+            <enclosure url="https://github.com/stevemcqueenz/claude-notch-tracker/releases/download/v0.4.0/ClaudeNotch.zip" length="0" type="application/octet-stream" sparkle:edSignature="TODO"/>
+        </item>
+        <item>
             <title>0.3.4</title>
             <description><![CDATA[
                 <h2>Numbers you can trust</h2>
