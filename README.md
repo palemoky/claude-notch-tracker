@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🦀 Claude, Codex & Antigravity Notch Usage Companion
+# 🦀 Claude, Codex & Antigravity, DeepSeek, Opencode-Go Notch Usage Companion
 
 **Live Claude, Codex and Antigravity usage in your Mac's notch: limits, resets, tokens, and cost.**
 
