@@ -44,6 +44,9 @@ enum ProviderAvailability {
         // fill the chart and tiles when `agy` is missing.
         case .antigravity:
             AntigravityPaths.executable() != nil || !AntigravityPaths.dataDirectories.isEmpty
+        // A key in the environment or one saved from the menu; the saved one is known from a
+        // flag, so this never reads the Keychain.
+        case .deepseek: DeepSeekCredentials.isConfigured
         }
     }
 }

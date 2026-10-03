@@ -4,6 +4,7 @@ enum UsageProviderID: String, CaseIterable, Identifiable, Sendable {
     case claude
     case codex
     case antigravity
+    case deepseek
 
     var id: String { rawValue }
 
@@ -12,6 +13,7 @@ enum UsageProviderID: String, CaseIterable, Identifiable, Sendable {
         case .claude: "Claude"
         case .codex: "Codex"
         case .antigravity: "Antigravity"
+        case .deepseek: "DeepSeek"
         }
     }
 
@@ -21,6 +23,7 @@ enum UsageProviderID: String, CaseIterable, Identifiable, Sendable {
         case .claude: "Sign in to Claude to see usage here"
         case .codex: "Install the Codex CLI to track usage here"
         case .antigravity: "Install the Antigravity CLI to track usage here"
+        case .deepseek: "Add a DeepSeek API key from the right-click menu"
         }
     }
 
@@ -29,6 +32,7 @@ enum UsageProviderID: String, CaseIterable, Identifiable, Sendable {
         case .claude: "sparkles"
         case .codex: "terminal.fill"
         case .antigravity: "mountain.2.fill"
+        case .deepseek: "fish.fill"
         }
     }
 }
@@ -47,11 +51,25 @@ struct UsageLimitMetric: Equatable, Sendable, Identifiable {
     }
 }
 
+/// Colour for a value that carries a state of its own rather than a usage fraction, e.g.
+/// DeepSeek's peak/off-peak phase. Matches the ring's ok/warn/critical palette.
+enum UsageTint: Equatable, Sendable {
+    case ok, warn, critical
+}
+
 struct UsageStatMetric: Equatable, Sendable, Identifiable {
     let id: String
     let label: String
     let value: String
     let subtitle: String?
+    var tint: UsageTint? = nil
+}
+
+/// What the closed pill shows for a provider with no usage fraction to ring: a short value (a
+/// balance) and a status dot in place of the ring.
+struct UsagePill: Equatable, Sendable {
+    let text: String
+    let tint: UsageTint
 }
 
 struct UsageSessionMetric: Equatable, Sendable, Identifiable {
@@ -94,6 +112,10 @@ struct ProviderUsageSnapshot: Equatable, Sendable {
     var source: String?
     var fetchedAt: Date?
     var statusMessage: String?
+    /// Replaces the closed pill's percent + ring (DeepSeek's balance + pricing phase).
+    var pill: UsagePill?
+    /// ISO code for every money figure in this snapshot; nil = USD (Claude's local logs).
+    var currency: String?
 
     /// The headline fraction for the collapsed pill: the FIRST limit's value, nil when that limit
     /// has no value yet. Deliberately not "first non-nil" — falling through to a later limit would

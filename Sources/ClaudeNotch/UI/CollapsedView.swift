@@ -39,6 +39,27 @@ enum Fmt {
     }
     static func usd(_ v: Double) -> String { String(format: "$%.2f", v) }
 
+    /// Money in a snapshot's own currency; nil is USD, which is what every pre-DeepSeek figure is.
+    static func money(_ v: Double, currency: String?) -> String {
+        guard let currency, currency != "USD" else { return usd(v) }
+        return symbol(currency) + String(format: "%.2f", v)
+    }
+
+    /// Fits the closed pill's wing: whole units from 100 up, one decimal place below that.
+    static func compactMoney(_ v: Double, currency: String?) -> String {
+        let s = symbol(currency ?? "USD")
+        if v >= 100 { return s + String(Int(v.rounded())) }
+        return s + String(format: "%.1f", v)
+    }
+
+    private static func symbol(_ currency: String) -> String {
+        switch currency {
+        case "USD": "$"
+        case "CNY": "¥"
+        default: currency + " "
+        }
+    }
+
     /// Money from API minor units + ISO currency code, e.g. (4251, "EUR") -> "€42.51".
     /// Assumes 2 decimal places, which matches every currency claude.ai bills in.
     static func money(minor: Int, currency: String) -> String {
