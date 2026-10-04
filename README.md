@@ -22,7 +22,7 @@ limits, resets, tokens and cost, one click away.
 
 <br/>
 
-<img src="docs/demo.gif" width="720" alt="Claude Notch: click to expand, swipe between the limits and detail pages, and tap to switch active sessions or all-time" />
+<a href="https://stevemcqueenz.github.io/claude-notch-tracker/#film"><img src="docs/readme/film.gif" width="720" alt="From the Claude Notch film: the island appears beside the camera, clicks open to show limits and spend, then swipes to the week chart and sessions" /></a>
 
 </div>
 
