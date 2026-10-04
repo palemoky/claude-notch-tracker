@@ -1,8 +1,8 @@
-<a href="https://stevemcqueenz.github.io/claude-notch-tracker/">
-  <img src="docs/readme/banner.jpg" alt="Claude Notch: the notch island open, showing 5-hour, 7-day and Fable limits, today's cost, credits and all-time spend">
-</a>
-
 <div align="center">
+
+<img src="docs/readme/clawd.png" width="72" alt="" />
+
+# Claude Notch
 
 Live **Claude, Codex, Antigravity, DeepSeek and opencode-go** usage in your Mac's notch:<br/>
 limits, resets, tokens and cost, one click away.
