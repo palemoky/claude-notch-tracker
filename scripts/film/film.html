@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Claude Notch film</title>
+<!-- 1920x1080 product film. render(t) draws frame t (seconds) deterministically; render.cjs steps it
+     at 30 fps and ffmpeg encodes the frames. Open with ?play to preview in real time. -->
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;600&display=block" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+.stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #050506; }
+
+/* ---------- the laptop, in world coordinates (screen = 1600x1000) ---------- */
+.world { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; transform-origin: 0 0; }
+.bezel { position: absolute; inset: -26px; background: #000; border-radius: 46px;
+  box-shadow: 0 0 0 2px #2b2c31, 0 0 0 3px #111, 0 80px 160px rgba(0,0,0,.6); }
+.base { position: absolute; top: 1030px; left: -130px; width: 1860px; height: 34px;
+  background: linear-gradient(#3b3c42, #1d1e22 60%, #121316); border-radius: 4px 4px 34px 34px; }
+.base::after { content: ""; position: absolute; left: 50%; top: 0; width: 240px; height: 11px; margin-left: -120px;
+  background: #121316; border-radius: 0 0 14px 14px; }
+.screen { position: absolute; inset: 0; overflow: hidden; border-radius: 20px 20px 4px 4px; background: #07070a; }
+.desk { position: absolute; inset: 0; }
+.wall { position: absolute; inset: -40px;
+  background:
+    radial-gradient(60% 70% at 18% 30%, #3a2a78 0%, transparent 60%),
+    radial-gradient(50% 60% at 85% 75%, #0d6a6a 0%, transparent 60%),
+    radial-gradient(45% 50% at 62% 18%, #8a4630 0%, transparent 60%),
+    radial-gradient(70% 60% at 40% 95%, #142a6b 0%, transparent 65%),
+    #0a0b14; }
+.menubar { position: absolute; inset: 0 0 auto; height: 34px; display: flex; align-items: center; gap: 26px;
+  padding: 0 22px; font: 500 15px Inter, sans-serif; color: rgba(255,255,255,.92);
+  background: rgba(10,10,20,.28); backdrop-filter: blur(20px); }
+.menubar b { font-weight: 700; }
+.menubar .right { margin-left: auto; display: flex; gap: 22px; align-items: center; }
+.menubar svg { width: 20px; height: 14px; fill: rgba(255,255,255,.9); }
+.term { position: absolute; left: 150px; top: 250px; width: 900px; height: 560px; border-radius: 16px;
+  background: rgba(16,16,22,.82); box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 40px 100px rgba(0,0,0,.5);
+  backdrop-filter: blur(30px); overflow: hidden; }
+.term .chrome { height: 44px; display: flex; align-items: center; gap: 9px; padding: 0 18px;
+  font: 500 14px Inter, sans-serif; color: rgba(255,255,255,.45); }
+.term .chrome i { width: 13px; height: 13px; border-radius: 50%; background: #ff5f57; }
+.term .chrome i:nth-child(2) { background: #febc2e; } .term .chrome i:nth-child(3) { background: #28c840; }
+.term .chrome span { margin-left: 260px; }
+.term pre { padding: 18px 28px; font: 20px/1.75 "JetBrains Mono", monospace; color: #d8dae0; white-space: pre-wrap; }
+.term .dim { color: rgba(216,218,224,.45); } .term .ok { color: #5CCAA6; } .term .clay { color: #E08A68; }
+.term .caret { display: inline-block; width: 11px; height: 22px; background: #d8dae0; vertical-align: -4px; }
+.side { position: absolute; right: 120px; top: 330px; width: 360px; height: 420px; border-radius: 16px;
+  background: rgba(240,240,250,.07); box-shadow: 0 0 0 1px rgba(255,255,255,.07); backdrop-filter: blur(30px); }
+.side i { display: block; height: 14px; margin: 26px 28px 0; border-radius: 7px; background: rgba(255,255,255,.1); }
+
+/* ---------- the island (mirrors the app's IslandView) ---------- */
+.island { position: absolute; top: 0; left: 800px; background: #000; color: #fff; font-family: Inter, sans-serif; }
+.island::before, .island::after { content: ""; position: absolute; top: 0; width: 9px; height: 9px; }
+.island::before { left: -9px; background: radial-gradient(circle at 0 100%, transparent 9px, #000 9.5px); }
+.island::after { right: -9px; background: radial-gradient(circle at 100% 100%, transparent 9px, #000 9.5px); }
+.island .clip { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
+.row { position: absolute; left: 0; right: 0; top: 0; height: 34px; display: flex; align-items: center; padding: 0 12px; }
+.who { width: 44px; height: 30px; display: grid; place-items: center start; }
+.who img { height: 18px; image-rendering: pixelated; }
+.who img.mark { height: 17px; image-rendering: auto; }
+.pill { margin-left: auto; display: flex; align-items: center; gap: 7px; font: 600 14px Inter, sans-serif; font-variant-numeric: tabular-nums; }
+.ring { width: 17px; height: 17px; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 3.2; }
+.drop { position: absolute; top: 38px; left: 12px; width: 336px; height: 248px; overflow: hidden; }
+.pages { display: flex; width: 200%; }
+.page { width: 50%; height: 222px; padding: 0 1px; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.tile { background: rgba(255,255,255,.07); border-radius: 10px; padding: 6px 10px; min-height: 68px; }
+.tile:last-child:nth-child(odd) { grid-column: span 2; }
+.tile .l { font-size: 10.5px; color: rgba(255,255,255,.5); }
+.tile .v { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.25; }
+.tile .s { font-size: 10px; color: rgba(255,255,255,.45); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.v.warn { color: #F5B333; } .v.hot { color: #EB5757; } .v.good { color: #5CCC7A; }
+.head { display: flex; justify-content: space-between; font-size: 10.5px; color: rgba(255,255,255,.5); padding: 2px 2px 6px; }
+.chart { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 88px; align-items: end;
+  background: rgba(255,255,255,.07); border-radius: 10px; padding: 10px 10px 4px; }
+.chart div { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;
+  font-size: 9.5px; color: rgba(255,255,255,.4); gap: 3px; }
+.chart i { width: 100%; max-width: 22px; border-radius: 3px; background: rgba(255,255,255,.28); }
+.chart .today i { background: #fff; } .chart .today { color: #fff; }
+.list { list-style: none; padding: 0; margin-top: 6px; font-size: 11.5px; }
+.list li { display: flex; justify-content: space-between; padding: 2px; }
+.list li span:last-child { color: rgba(255,255,255,.55); font-variant-numeric: tabular-nums; }
+.dots { position: absolute; bottom: 9px; left: 0; right: 0; display: flex; justify-content: center; gap: 10px; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.3); }
+.dots i.on { background: rgba(255,255,255,.9); }
+
+.cursor { position: absolute; left: 0; top: 0; width: 26px; height: 38px; transform-origin: 0 0; }
+.ripple { position: absolute; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%;
+  border: 3px solid rgba(255,255,255,.9); }
+
+/* ---------- frame-space overlays ---------- */
+.vignette { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.55)); }
+.shade { position: absolute; inset: auto 0 0; height: 460px; background: linear-gradient(transparent, rgba(3,3,5,.92) 75%); }
+.cap { position: absolute; left: 0; right: 0; bottom: 96px; text-align: center; color: #F5F5F7; }
+.cap .big { font: 800 84px/1 Archivo, sans-serif; font-stretch: 118%; letter-spacing: -.035em; }
+.cap .small { margin-top: 22px; font: 400 32px Inter, sans-serif; color: rgba(245,245,247,.62); letter-spacing: -.01em; height: 44px; position: relative; }
+.slot { position: absolute; left: 0; right: 0; }
+.end { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; color: #F5F5F7; }
+.end img { height: 132px; image-rendering: pixelated; margin: 0 auto 44px; }
+.end h1 { font: 800 172px/.9 Archivo, sans-serif; font-stretch: 125%; letter-spacing: -.05em; }
+.end p { margin-top: 34px; font: 400 36px Inter, sans-serif; color: rgba(245,245,247,.66); }
+.end .url { margin-top: 56px; display: inline-flex; gap: 14px; align-items: center; font: 600 28px Inter, sans-serif;
+  padding: 18px 34px; border-radius: 999px; background: #F5F5F7; color: #050506; justify-self: center; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="world" id="world">
+    <div class="bezel"></div>
+    <div class="base"></div>
+    <div class="screen">
+      <div class="desk" id="desk">
+        <div class="wall"></div>
+        <div class="side"><i style="width:60%"></i><i></i><i style="width:80%"></i><i style="width:45%"></i><i></i><i style="width:70%"></i></div>
+        <div class="term">
+          <div class="chrome"><i></i><i></i><i></i><span>~/code/billing — claude</span></div>
+          <pre id="term"></pre>
+        </div>
+        <div class="menubar"><b>Terminal</b><span>Shell</span><span>Edit</span><span>View</span><span>Window</span><span>Help</span>
+          <div class="right">
+            <svg viewBox="0 0 20 14"><path d="M10 13 0 4a14 14 0 0 1 20 0z"/></svg>
+            <svg viewBox="0 0 26 14"><rect x="0" y="1" width="22" height="12" rx="3" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="1.4"/><rect x="2.5" y="3.5" width="15" height="7" rx="1.5"/><rect x="23" y="5" width="2" height="4" rx="1"/></svg>
+            <span>Sun 4 Oct&nbsp;&nbsp;9:41</span></div>
+        </div>
+      </div>
+      <div class="island" id="island">
+        <div class="clip">
+          <div class="row" id="row">
+            <div class="who"><img id="who" src="../../docs/assets/clawd-0.png" alt=""></div>
+            <div class="pill"><span id="pct">42%</span><span id="ringBox"></span></div>
+          </div>
+          <div class="drop" id="drop">
+            <div class="pages" id="pages"><div class="page" id="p1"></div><div class="page" id="p2"></div></div>
+            <div class="dots"><i id="d0" class="on"></i><i id="d1"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <svg class="cursor" id="cursor" viewBox="0 0 26 38"><path d="M2 2v30l8-7.5 5.5 12 5-2.2-5.4-11.8H26z" fill="#000" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/></svg>
+    <div class="ripple" id="ripple"></div>
+  </div>
+  <div class="vignette"></div>
+  <div class="shade" id="shade"></div>
+  <div class="cap" id="cap"><div class="big" id="capBig"></div><div class="small" id="capSmall"></div></div>
+  <div class="end" id="end">
+    <img id="endCrab" src="../../docs/assets/clawd-0.png" alt="">
+    <h1>Claude Notch</h1>
+    <p>Your AI usage limits, live in your Mac's notch.</p>
+    <div class="url">Free on GitHub&nbsp;&nbsp;/&nbsp;&nbsp;stevemcqueenz/claude-notch-tracker</div>
+  </div>
+</div>
+
+<script>
+const DURATION = 30;
+const H = 3600, D = 86400;
+const $ = id => document.getElementById(id);
+
+// ---------- easing ----------
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const inOut = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const outExpo = k => k >= 1 ? 1 : 1 - Math.pow(2, -10 * k);
+const outBack = k => 1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2);
+// critically damped spring, like the app's .spring(response: 0.6, dampingFraction: 1.0)
+const spring = k => k >= 1 ? 1 : 1 - (1 + 9 * k) * Math.exp(-9 * k);
+
+// ---------- data (sample numbers, same shapes as the site) ----------
+const crab = Array.from({ length: 20 }, (_, i) => `../../docs/assets/clawd-${i}.png`);
+const money = (sym, d = 2) => n => sym + n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const PROVIDERS = [
+  { name: 'Claude', crab: true, used: .42,
+    tiles: [{ l: '5-Hour', used: .42, r: 2*H + 18*60 }, { l: '7-Day', used: .71, r: 3*D + 6*H }, { l: 'Fable', used: .18, r: 3*D + 6*H },
+      { l: 'cost today · local', n: 38.20, f: money('$'), s: '~$61.40 by tonight' }, { l: 'credits', n: 35.52, f: money('€'), s: '14% used' },
+      { l: 'all-time · local', n: 4812.06, f: money('$'), s: '2.1B tokens' }],
+    week: { l: 'last 7 days · local', vals: [12.4, 31.9, 8.2, 44.7, 27.3, 19.8, 38.2], peak: '$45' },
+    list: { l: 'sessions today', rows: [['Refactor billing webhooks', '$14.82'], ['Notch landing page', '$11.37'], ['Fix flaky snapshot tests', '$6.01']] } },
+  { name: 'Codex', mark: '../../docs/assets/codex.png', used: .23,
+    tiles: [{ l: '5-Hour', used: .23, r: 3*H + 41*60 }, { l: '7-Day', used: .54, r: 4*D + 2*H }, { l: 'tokens today · account', v: '1.8M' },
+      { l: 'credits', v: '120' }, { l: 'plan', v: 'Pro' }, { l: 'tokens · all-time', v: '312.4M' }] },
+  { name: 'Antigravity', mark: '../../docs/assets/antigravity.png', used: .78,
+    tiles: [{ l: '5-Hour', used: .78, r: 1*H + 7*60 }, { l: '7-Day', used: .31, r: 5*D + 9*H }, { l: 'tokens today · local', v: '920K' },
+      { l: 'tokens · all-time', v: '88.6M' }, { l: 'thinking · all-time', v: '21.3M' }] },
+  { name: 'DeepSeek', mark: '../../docs/assets/deepseek.png', pill: '¥86',
+    tiles: [{ l: 'balance', v: '¥86.40' }, { l: 'pricing now', v: 'off-peak', tint: 'good', s: 'standard rate' },
+      { l: 'spent today · observed', v: '¥3.12' }, { l: 'last 7 days · observed', v: '¥27.80' }] },
+  { name: 'opencode-go', mark: '../../docs/assets/opencodego.png', used: .88,
+    tiles: [{ l: '5-Hour', used: .12, r: 4*H + 2*60 }, { l: '7-Day', used: .47, r: 2*D + 11*H }, { l: 'Monthly', used: .88, r: 9*D + 4*H },
+      { l: 'zen balance', v: '$18.40' }, { l: 'Renews', v: 'in 9d', s: 'monthly plan' }, { l: 'Sessions left', v: '12' }] },
+];
+const state = u => u < .66 ? 'ok' : u < .85 ? 'warn' : 'hot';
+const RING = { ok: '#5CCAA6', warn: '#F5B333', hot: '#EB5757' };
+const until = s => { s = Math.max(0, s | 0); const d = s / D | 0, h = (s % D) / H | 0, m = (s % H) / 60 | 0;
+  return d ? `${d}d ${h}h` : h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`; };
+
+// ---------- timeline ----------
+const SWITCHES = [17.4, 18.35, 19.3, 20.25, 21.2];          // provider clicks: → Codex, Antigravity, DeepSeek, opencode-go, Claude
+const providerAt = t => SWITCHES.filter(s => t >= s).length % PROVIDERS.length;
+// 5-hour usage over time: steady, then the climb to the limit in the "keeps pace" beat
+const used5h = t => t < 21.9 ? .42 : lerp(.42, 1, Math.pow(prog(t, 21.9, 24.4), 1.6));
+const count = t => outExpo(prog(t, 8.15, 9.4));                 // number count-up on first open
+const CAPS = [
+  [0.5, 3.0, 'Deep in a session.', ''],
+  [3.3, 5.1, 'How much is left?', ''],
+  [5.9, 7.7, 'Right in the notch.', 'Claude Notch lives beside your camera.'],
+  [8.5, 12.4, 'Your real limits.', '5-hour, 7-day and Fable, with reset countdowns.'],
+  [12.9, 16.6, 'Spend, day by day.', 'And every session, by name.'],
+  [17.0, 21.6, 'Five providers. One click.', null],
+  [22.0, 25.2, 'Clawd keeps pace.', 'He hurries as you near a limit, and stops when you’re out.'],
+];
+// camera: focus point in world coords + scale; frame anchor is (960, 540)
+const WIDE = { x: 800, y: 600, s: .6 }, CLOSE = { x: 800, y: 238, s: 2.1 };
+function camera(t) {
+  const push = lerp(.6, .655, prog(t, 0, 5.2));
+  const wide = { ...WIDE, s: push };
+  let k = inOut(prog(t, 5.0, 6.5)) - inOut(prog(t, 25.7, 27.3));
+  return { x: lerp(wide.x, CLOSE.x, k), y: lerp(wide.y, CLOSE.y, k), s: lerp(wide.s, CLOSE.s, k) };
+}
+// cursor path in world coords: [time, x, y]
+const PATH = [[6.6, 1120, 300], [7.5, 912, 18], [8.3, 912, 18], [9.0, 1090, 250], [12.5, 1090, 250], [12.75, 930, 150], [13.25, 700, 150],
+  [13.7, 760, 250], [16.6, 760, 250], [17.25, 654, 17], [21.4, 654, 17], [22.1, 1080, 330], [24.6, 1080, 330], [25.05, 1180, 560], [26.2, 1180, 560]];
+const CLICKS = [7.62, ...SWITCHES, 25.15];
+function cursorAt(t) {
+  for (let i = 0; i < PATH.length - 1; i++) {
+    const [a, x1, y1] = PATH[i], [b, x2, y2] = PATH[i + 1];
+    if (t <= b) { const k = inOut(prog(t, a, b)); return [lerp(x1, x2, k), lerp(y1, y2, k)]; }
+  }
+  return PATH.at(-1).slice(1);
+}
+const openK = t => spring(prog(t, 7.75, 8.7)) - spring(prog(t, 25.2, 26.0));
+const pageK = t => t < 17.4 ? inOut(prog(t, 12.8, 13.4)) : 0;
+
+// ---------- term text ----------
+const PROMPT = 'refactor the billing webhooks and add retries';
+const LINES = [[2.75, '<span class="clay">●</span> Reading src/billing/webhooks.ts'], [3.25, '<span class="clay">●</span> Editing 4 files'],
+  [3.75, '<span class="clay">●</span> Running tests <span class="dim">…</span> <span class="ok">128 passed</span>'], [4.3, '<span class="clay">●</span> Adding exponential backoff to the retry queue']];
+function term(t) {
+  const typed = PROMPT.slice(0, Math.floor(PROMPT.length * prog(t, .8, 2.5)));
+  const caret = t < 2.6 && Math.floor(t * 2.4) % 2 === 0 ? '<span class="caret"></span>' : '';
+  return `<span class="dim">~/code/billing</span> <span class="ok">main</span>\n<span class="clay">❯</span> ${typed}${caret}\n\n` +
+    LINES.filter(([s]) => t >= s).map(([, l]) => l).join('\n');
+}
+
+// ---------- island content ----------
+function tileHTML(tl, k, used0, style = '') {
+  if ('used' in tl) {
+    const u = used0 ?? tl.used, st = state(u);
+    return `<div class="tile" style="${style}"><div class="l">${tl.l}</div><div class="v ${st === 'ok' ? '' : st}">${Math.round(u * 100 * k)}%</div><div class="s">resets in ${until(tl.r)}</div></div>`;
+  }
+  const v = 'n' in tl ? tl.f(tl.n * k) : tl.v;
+  return `<div class="tile" style="${style}"><div class="l">${tl.l}</div><div class="v ${tl.tint || ''}">${v}</div>${tl.s ? `<div class="s">${tl.s}</div>` : ''}</div>`;
+}
+function page2(p, t) {
+  const w = p.week, max = Math.max(...w.vals), days = 'MTWTFSS';
+  const bars = w.vals.map((v, i) => { const g = outBack(prog(t, 12.95 + i * .06, 13.6 + i * .06));
+    return `<div class="${i === 6 ? 'today' : ''}"><i style="height:${Math.max(3, v / max * 52 * g)}px"></i>${days[i]}</div>`; }).join('');
+  const rows = p.list.rows.map(([a, b], i) => { const g = outExpo(prog(t, 13.3 + i * .1, 13.9 + i * .1));
+    return `<li style="opacity:${g};transform:translateX(${(1 - g) * 24}px)"><span>${a}</span><span>${b}</span></li>`; }).join('');
+  return `<div class="head"><span>${w.l}</span><span>peak ${w.peak}</span></div><div class="chart">${bars}</div>
+    <ul class="list"><li class="head" style="padding-bottom:0"><span>${p.list.l}</span></li>${rows}</ul>`;
+}
+
+// Clawd's walk: frame = ∫ fps dt, fps = 8 + urgency·10, frozen at 100% (AvatarView).
+function crabFrame(t) {
+  let phase = 0; const dt = 1 / 120;
+  for (let x = 0; x < t; x += dt) { const u = used5h(x); phase += (u >= 1 ? 0 : 8 + u * 10) * dt; }
+  return Math.floor(phase) % 20;
+}
+
+function render(t) {
+  // camera
+  const c = camera(t);
+  $('world').style.transform = `translate(${960 - c.x * c.s}px, ${540 - c.y * c.s}px) scale(${c.s})`;
+  const close = inOut(prog(t, 5.0, 6.5)) - inOut(prog(t, 25.7, 27.3));
+  $('desk').style.filter = `blur(${close * 7}px) brightness(${1 - close * .45})`;
+  $('stage').style.opacity = outExpo(prog(t, 0, .9));
+  $('term').innerHTML = term(t);
+
+  // island geometry
+  const appear = spring(prog(t, 5.7, 6.6));
+  const o = openK(t);
+  const w = lerp(lerp(200, 300, appear), 360, o), h = lerp(34, 286, o);
+  const isl = $('island');
+  isl.style.width = w + 'px'; isl.style.height = h + 'px'; isl.style.marginLeft = -w / 2 + 'px';
+  isl.style.borderRadius = `0 0 ${lerp(14, 24, o)}px ${lerp(14, 24, o)}px`;
+  isl.style.boxShadow = `0 ${30 * o}px ${120 * o}px rgba(0,0,0,${.55 * o}), 0 0 ${160 * o}px rgba(120,140,255,${.12 * o})`;
+  $('row').style.opacity = appear;
+  $('row').style.padding = `0 ${lerp(0, 12, appear)}px`;
+
+  // provider + crossfade
+  const pi = providerAt(t), p = PROVIDERS[pi];
+  const dip = Math.max(0, ...SWITCHES.map(s => 1 - Math.abs(t - s) / .14));
+  const flip = Math.max(0, ...SWITCHES.map(s => 1 - Math.abs(t - s) / .2));
+  const who = $('who');
+  if (p.crab) { who.className = ''; who.src = crab[crabFrame(t)]; } else { who.className = 'mark'; who.src = p.mark; }
+  who.style.transform = `scale(${1 - flip * .45}) rotateY(${flip * 90}deg)`;
+
+  // pill
+  const u = p.crab ? used5h(t) : p.used;
+  const k1 = t < 8 ? outExpo(prog(t, 6.1, 7.2)) : 1;
+  if (p.pill) { $('pct').textContent = p.pill; $('ringBox').innerHTML = '<span style="display:block;width:8px;height:8px;border-radius:50%;background:#5CCC7A"></span>'; }
+  else {
+    const cc = 2 * Math.PI * 6.4;
+    $('pct').textContent = Math.round(u * 100 * k1) + '%';
+    $('ringBox').innerHTML = `<svg class="ring" viewBox="0 0 17 17"><circle cx="8.5" cy="8.5" r="6.4" stroke="rgba(255,255,255,.18)"/><circle cx="8.5" cy="8.5" r="6.4" stroke="${RING[state(u)]}" stroke-linecap="round" stroke-dasharray="${Math.max(.01, u * k1 * cc)} ${cc}"/></svg>`;
+  }
+  $('pct').parentElement.style.opacity = 1 - dip;
+
+  // drop content
+  $('drop').style.opacity = clamp((o - .35) / .5) * (1 - dip);
+  $('p1').innerHTML = `<div class="tiles">${p.tiles.map((tl, i) => {
+    const g = outExpo(prog(t, 8.05 + i * .07, 8.75 + i * .07));
+    const k = pi === 0 && t < 17 ? count(t) : 1;
+    const st = t > 9 ? '' : `opacity:${g};transform:translateY(${(1 - g) * 14}px) scale(${lerp(.94, 1, g)})`;
+    return tileHTML(tl, k, pi === 0 && i === 0 ? used5h(t) : undefined, st); }).join('')}</div>`;
+  $('p2').innerHTML = p.week ? page2(p, t) : '';
+  const pk = pageK(t);
+  $('pages').style.transform = `translateX(${-50 * pk}%)`;
+  $('d0').className = pk < .5 ? 'on' : ''; $('d1').className = pk >= .5 ? 'on' : '';
+
+  // cursor + click ripples
+  const [cx, cy] = cursorAt(t);
+  const cur = $('cursor');
+  const vis = prog(t, 6.5, 6.8) * (1 - prog(t, 25.9, 26.3));
+  const press = Math.max(0, ...CLICKS.map(s => 1 - Math.abs(t - s) / .09));
+  cur.style.opacity = vis;
+  cur.style.transform = `translate(${cx}px, ${cy}px) scale(${(1 - press * .14) / Math.max(1, c.s * .55)})`;
+  const rip = CLICKS.map(s => prog(t, s, s + .45)).find(k => k > 0 && k < 1);
+  const rp = $('ripple');
+  rp.style.opacity = rip ? (1 - rip) * .8 * vis : 0;
+  rp.style.transform = `translate(${cx}px, ${cy}px) scale(${rip ? lerp(.2, 1.1, outExpo(rip)) / c.s * 1.4 : 0})`;
+
+  // captions
+  let big = '', small = '', a = 0, slot = null;
+  for (const [s, e, b, sm] of CAPS) if (t >= s - .1 && t <= e + .6) {
+    big = b; small = sm; slot = sm === null;
+    a = outExpo(prog(t, s, s + .6)) * (1 - inOut(prog(t, e, e + .5)));
+  }
+  const cap = $('cap');
+  cap.style.opacity = a;
+  cap.style.transform = `translateY(${(1 - a) * 26}px)`;
+  cap.style.filter = `blur(${(1 - a) * 10}px)`;
+  $('capBig').textContent = big;
+  if (slot) {
+    // provider name rolls in a slot, in step with each click
+    const names = ['Claude', 'Codex', 'Antigravity', 'DeepSeek', 'opencode-go', 'Claude'];
+    const idx = SWITCHES.filter(s => t >= s - .05).length;
+    const k = outExpo(prog(t, (SWITCHES[idx - 1] ?? 0) - .05, (SWITCHES[idx - 1] ?? 0) + .35));
+    $('capSmall').innerHTML = `<span class="slot" style="opacity:${k};transform:translateY(${(1 - k) * 30}px)">${names[idx]}</span>` +
+      (idx ? `<span class="slot" style="opacity:${(1 - k)};transform:translateY(${-k * 30}px)">${names[idx - 1]}</span>` : '');
+  } else $('capSmall').textContent = small;
+  $('shade').style.opacity = clamp(a * 1.2);
+
+  // end card
+  const e = inOut(prog(t, 26.6, 27.6));
+  $('world').style.opacity = 1 - e * .82;
+  $('world').style.filter = `blur(${e * 10}px)`;
+  const end = $('end');
+  end.style.opacity = e;
+  end.style.transform = `scale(${lerp(1.06, 1, e)})`;
+  $('endCrab').src = crab[Math.floor(t * 11) % 20];
+  [...end.children].forEach((el, i) => { const g = outExpo(prog(t, 26.8 + i * .14, 27.7 + i * .14));
+    el.style.opacity = g; el.style.transform = `translateY(${(1 - g) * 30}px)`; });
+  $('stage').style.opacity *= 1 - prog(t, 29.5, 30);
+}
+
+window.render = render;
+window.DURATION = DURATION;
+window.ready = Promise.all([document.fonts.ready, ...crab.concat(PROVIDERS.filter(p => p.mark).map(p => p.mark)).map(src =>
+  new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = src; }))]);
+if (location.search.includes('play')) { const t0 = performance.now(); (function loop() { render(((performance.now() - t0) / 1000) % DURATION); requestAnimationFrame(loop); })(); }
+else render(0);
+</script>
+</body>
+</html>

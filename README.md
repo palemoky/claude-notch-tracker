@@ -1,8 +1,5 @@
 <a href="https://stevemcqueenz.github.io/claude-notch-tracker/">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/banner-dark.png">
-    <img src="docs/readme/banner-light.png" alt="Claude Notch: the notch island open, showing 5-hour, 7-day and Fable limits, today's cost, credits and all-time spend">
-  </picture>
+  <img src="docs/readme/banner.jpg" alt="Claude Notch: the notch island open, showing 5-hour, 7-day and Fable limits, today's cost, credits and all-time spend">
 </a>
 
 <div align="center">
@@ -14,7 +11,9 @@ limits, resets, tokens and cost, one click away.
 
 [![Download for macOS](https://img.shields.io/github/v/release/stevemcqueenz/claude-notch-tracker?style=for-the-badge&label=Download%20for%20macOS&labelColor=000000&color=333333&logo=apple&logoColor=white)](https://github.com/stevemcqueenz/claude-notch-tracker/releases/latest)
 &nbsp;
-[![Try the live notch](https://img.shields.io/badge/Website-try_the_live_notch-E3E5E8?style=for-the-badge&labelColor=000000)](https://stevemcqueenz.github.io/claude-notch-tracker/)
+[![Watch the film](https://img.shields.io/badge/%E2%96%B6_Watch_the_film-30_seconds-F5F5F7?style=for-the-badge&labelColor=000000)](https://stevemcqueenz.github.io/claude-notch-tracker/#film)
+&nbsp;
+[![Website](https://img.shields.io/badge/Website-try_the_live_notch-F5F5F7?style=for-the-badge&labelColor=000000)](https://stevemcqueenz.github.io/claude-notch-tracker/)
 
 ![macOS 14+](https://img.shields.io/badge/macOS-14+-111111?logo=apple&logoColor=white)
 ![Apple Silicon and Intel](https://img.shields.io/badge/Apple_Silicon_%26_Intel-111111)

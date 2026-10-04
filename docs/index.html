@@ -5,209 +5,272 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Claude Notch: AI usage limits in your Mac's notch</title>
 <meta name="description" content="Live Claude, Codex, Antigravity, DeepSeek and opencode-go usage in your Mac's notch: limits, resets, tokens, and cost. Free, open source, macOS 14+.">
-<meta name="theme-color" content="#E3E5E8" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#18191C" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#000000">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Claude Notch">
-<meta property="og:description" content="Your AI usage limits, live beside your Mac's camera.">
+<meta property="og:description" content="Your AI usage limits, live in your Mac's notch.">
 <meta property="og:url" content="https://stevemcqueenz.github.io/claude-notch-tracker/">
-<meta property="og:image" content="https://stevemcqueenz.github.io/claude-notch-tracker/demo-poster.png">
+<meta property="og:image" content="https://stevemcqueenz.github.io/claude-notch-tracker/film-poster.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" href="assets/clawd-0.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Inter:wght@400..700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --desk: #E3E5E8; --ink: #15171A; --muted: #565C66; --line: rgba(21,23,26,.14);
-  --bar: rgba(227,229,232,.72); --notch: #000;
-  --ok: #5CCAA6; --green: #5CCC7A; --warn: #F5B333; --hot: #EB5757;
-  --sys: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Archivo", system-ui, sans-serif;
+  --bg: #000; --ink: #F5F5F7; --muted: #8E8E95; --line: rgba(255,255,255,.1); --panel: #0C0C0F; --panel-2: #151519;
+  --ok: #5CCAA6; --green: #5CCC7A; --warn: #F5B333; --hot: #EB5757; --clay: #E0805C;
+  --violet: #5B42D6; --teal: #129E96;
+  --display: "Archivo", system-ui, sans-serif;
+  --text: "Inter", system-ui, sans-serif;
+  --sys: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
   --ease: cubic-bezier(.22,1,.36,1);
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root { --desk: #18191C; --ink: #E6E8EB; --muted: #9AA0A9; --line: rgba(230,232,235,.14);
-    --bar: rgba(24,25,28,.72); color-scheme: dark; }
+  color-scheme: dark;
 }
 * { box-sizing: border-box; margin: 0; }
-html { scroll-behavior: smooth; scroll-padding-top: 56px; }
-body { background: var(--desk); color: var(--ink); font: 17px/1.6 "Archivo", system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+body { background: var(--bg); color: var(--ink); font: 17px/1.6 var(--text); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 a { color: inherit; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 img, video { display: block; max-width: 100%; }
-:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
-.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+.display { font-family: var(--display); font-stretch: 125%; font-weight: 800; letter-spacing: -.045em; line-height: .95; }
+h2.display { font-size: clamp(40px, 6.4vw, 84px); }
+.lead { font-size: clamp(18px, 1.9vw, 22px); color: var(--muted); max-width: 36em; letter-spacing: -.01em; }
+.lead b { color: var(--ink); font-weight: 600; }
+.center { text-align: center; } .center .lead { margin-inline: auto; }
 
-/* ---------- menu bar: the page's nav, the island sits in its middle ---------- */
-.menubar { position: fixed; inset: 0 0 auto; height: 34px; z-index: 10; display: flex;
-  align-items: center; justify-content: space-between; padding: 0 16px; font-size: 13.5px;
-  background: var(--bar); backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6); border-bottom: 1px solid var(--line); }
-.menubar nav { display: flex; gap: 2px; }
-.menubar a { text-decoration: none; padding: 3px 9px; border-radius: 5px; }
-.menubar a:hover { background: var(--line); }
-.menubar .app { font-weight: 700; }
+.btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 28px; border-radius: 999px;
+  font-weight: 600; font-size: 17px; text-decoration: none; transition: transform .2s var(--ease), background .2s; }
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--ink); color: #000; }
+.btn-primary:hover { background: #fff; }
+.btn-ghost { box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); }
+.btn-ghost:hover { background: rgba(255,255,255,.08); }
+.btn svg { width: 16px; height: 16px; }
 
-/* ---------- the island ---------- */
-.island { position: fixed; top: 0; left: 50%; z-index: 20; transform: translateX(-50%);
-  width: 300px; height: 34px; background: var(--notch); color: #fff; font-family: var(--sys);
-  border-radius: 0 0 14px 14px;
-  transition: width .55s var(--ease), height .55s var(--ease), border-radius .55s var(--ease); }
+/* ---------- nav ---------- */
+.nav { position: fixed; inset: 0 0 auto; z-index: 50; height: 56px; display: flex; align-items: center;
+  background: rgba(0,0,0,.62); backdrop-filter: saturate(1.8) blur(20px); -webkit-backdrop-filter: saturate(1.8) blur(20px);
+  border-bottom: 1px solid var(--line); }
+.nav .wrap { width: 100%; display: flex; align-items: center; gap: 28px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-stretch: 115%; font-weight: 750;
+  font-size: 17px; letter-spacing: -.02em; text-decoration: none; }
+.brand img { height: 15px; image-rendering: pixelated; }
+.nav nav { display: flex; gap: 26px; margin-left: auto; font-size: 14px; color: rgba(245,245,247,.75); }
+.nav nav a { text-decoration: none; } .nav nav a:hover { color: var(--ink); }
+.nav .btn { height: 34px; padding: 0 16px; font-size: 14px; }
+
+/* ---------- hero ---------- */
+.hero { position: relative; padding: 148px 0 40px; text-align: center; isolation: isolate; overflow-x: clip; }
+.hero h1 { font-size: clamp(50px, 9.4vw, 136px); }
+.hero h1 span { display: block; color: rgba(245,245,247,.42); }
+.hero .lead { margin: 30px auto 0; }
+.ctas { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 38px; }
+.fine { margin-top: 18px; font-size: 14px; color: var(--muted); }
+
+.mac { position: relative; width: min(1100px, 94vw); margin: 84px auto 0; perspective: 2000px; }
+.glow { position: absolute; inset: -10% -14% -4%; z-index: -1; filter: blur(70px); opacity: .55;
+  background: radial-gradient(40% 50% at 30% 45%, var(--violet), transparent 70%),
+              radial-gradient(35% 45% at 72% 60%, var(--teal), transparent 70%),
+              radial-gradient(30% 35% at 55% 25%, var(--clay), transparent 70%); }
+.lid { position: relative; padding: 1.6% 1.6% 0; background: #000; border-radius: 3.6% 3.6% 0 0 / 5.6% 5.6% 0 0;
+  box-shadow: 0 0 0 2px #2c2d32, 0 0 0 3px #0c0c0e, 0 60px 120px rgba(0,0,0,.7); transform-origin: 50% 100%; }
+.hinge { height: clamp(10px, 1.7vw, 20px); margin: 0 -6.5%; border-radius: 2px 2px 40% 40% / 2px 2px 100% 100%;
+  background: linear-gradient(#45464d, #1f2024 55%, #0e0f11); position: relative; }
+.hinge::after { content: ""; position: absolute; left: 50%; top: 0; width: 13%; height: 45%; transform: translateX(-50%);
+  background: #121316; border-radius: 0 0 12px 12px; }
+.screen { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 1.4% 1.4% 0 0; background: #07070a; }
+.desk { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.wall { position: absolute; inset: 0;
+  background: radial-gradient(60% 70% at 18% 30%, #3a2a78, transparent 60%), radial-gradient(50% 60% at 85% 75%, #0d6a6a, transparent 60%),
+    radial-gradient(45% 50% at 62% 18%, #8a4630, transparent 60%), radial-gradient(70% 60% at 40% 95%, #142a6b, transparent 65%), #0a0b14; }
+.mbar { position: absolute; inset: 0 0 auto; height: 26px; display: flex; align-items: center; gap: 18px; padding: 0 16px;
+  font: 500 12px var(--sys); color: rgba(255,255,255,.9); background: rgba(10,10,20,.3); }
+.mbar b { font-weight: 700; } .mbar .r { margin-left: auto; }
+.win { position: absolute; left: 7%; top: 21%; width: 58%; height: 64%; border-radius: 12px; background: rgba(16,16,22,.85);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 30px 80px rgba(0,0,0,.5); overflow: hidden; text-align: left; }
+.win .chrome { height: 32px; display: flex; gap: 7px; align-items: center; padding: 0 14px; }
+.win .chrome i { width: 10px; height: 10px; border-radius: 50%; background: #ff5f57; }
+.win .chrome i:nth-child(2) { background: #febc2e; } .win .chrome i:nth-child(3) { background: #28c840; }
+.win pre { padding: 8px 20px; font: 13px/1.8 ui-monospace, "SF Mono", Menlo, monospace; color: #d8dae0; white-space: pre-wrap; }
+.win .d { color: rgba(216,218,224,.45); } .win .g { color: var(--ok); } .win .c { color: var(--clay); }
+.side { position: absolute; right: 7%; top: 30%; width: 22%; height: 46%; border-radius: 12px; background: rgba(240,240,250,.07);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.07); }
+
+/* the island (mirrors the app's IslandView) */
+.island { position: absolute; top: 0; left: 50%; z-index: 2; transform: translateX(-50%); width: 300px; height: 30px;
+  background: #000; color: #fff; font-family: var(--sys); text-align: left; border-radius: 0 0 14px 14px;
+  transition: width .55s var(--ease), height .55s var(--ease), border-radius .55s var(--ease), box-shadow .55s var(--ease); }
 .island::before, .island::after { content: ""; position: absolute; top: 0; width: 8px; height: 8px; }
-.island::before { left: -8px; background: radial-gradient(circle at 0 100%, transparent 8px, var(--notch) 8.5px); }
-.island::after { right: -8px; background: radial-gradient(circle at 100% 100%, transparent 8px, var(--notch) 8.5px); }
-.island.open { width: 360px; height: 286px; border-radius: 0 0 24px 24px; }
-.island-row { display: flex; align-items: center; height: 34px; padding: 0 12px; }
-.island button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
-.island :focus-visible { outline-color: #fff; }
-.who { width: 44px; height: 30px; display: grid; place-items: center start; }
-.who img { height: 18px; width: auto; image-rendering: pixelated; }
-.who img.mark { height: 17px; image-rendering: auto; }
-.toggle { flex: 1; height: 30px; display: flex; align-items: center; justify-content: flex-end; gap: 7px;
-  font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; position: relative; }
-.cam { position: absolute; left: calc(50% - 22px); top: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px;
-  border-radius: 50%; background: radial-gradient(circle at 35% 35%, #2a2d3a, #0b0c10 60%); }
-.ring { width: 17px; height: 17px; transform: rotate(-90deg); }
+.island::before { left: -8px; background: radial-gradient(circle at 0 100%, transparent 8px, #000 8.5px); }
+.island::after { right: -8px; background: radial-gradient(circle at 100% 100%, transparent 8px, #000 8.5px); }
+.island.open { width: 360px; height: 284px; border-radius: 0 0 24px 24px; box-shadow: 0 30px 80px rgba(0,0,0,.55); }
+.irow { display: flex; align-items: center; height: 30px; padding: 0 12px; }
+.who { width: 44px; height: 28px; display: grid; place-items: center start; }
+.who img { height: 17px; width: auto; image-rendering: pixelated; }
+.who img.mark { height: 16px; image-rendering: auto; }
+.toggle { flex: 1; height: 28px; display: flex; align-items: center; justify-content: flex-end; gap: 7px;
+  font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ring { width: 16px; height: 16px; transform: rotate(-90deg); }
 .ring circle { fill: none; stroke-width: 3.2; }
-.ring .track { stroke: rgba(255,255,255,.18); }
-.ring .fill { stroke-linecap: round; transition: stroke-dasharray .4s ease, stroke .4s; }
-.phase { width: 8px; height: 8px; border-radius: 50%; }
-
-.drop { height: 252px; padding: 4px 12px 0; opacity: 0; visibility: hidden; overflow: hidden;
-  transition: opacity .2s, visibility 0s .2s; }
+.ring .fill { stroke-linecap: round; transition: stroke-dasharray .4s ease; }
+.drop { height: 254px; padding: 6px 12px 0; opacity: 0; visibility: hidden; transition: opacity .2s, visibility 0s .2s; }
 .open .drop { opacity: 1; visibility: visible; transition: opacity .35s .12s; }
 .pager { overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .pages { display: flex; width: 200%; transition: transform .45s var(--ease); }
 .page { width: 50%; height: 222px; padding: 0 1px; }
-.swap { transition: opacity .18s; }
-.swap.fading { opacity: 0; }
+.swap { transition: opacity .18s; } .swap.fading { opacity: 0; }
 .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-.tile { background: rgba(255,255,255,.06); border-radius: 10px; padding: 6px 10px; min-height: 68px; }
+.tile { background: rgba(255,255,255,.07); border-radius: 10px; padding: 6px 10px; min-height: 68px; }
 .tile:last-child:nth-child(odd) { grid-column: span 2; }
 .tile .l { font-size: 10.5px; color: rgba(255,255,255,.5); }
 .tile .v { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.25; }
-.tile .s { font-size: 10px; color: rgba(255,255,255,.45); font-variant-numeric: tabular-nums;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .s { font-size: 10px; color: rgba(255,255,255,.45); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .v.warn { color: var(--warn); } .v.hot { color: var(--hot); } .v.good { color: var(--green); }
-.chart-head, .list-head { display: flex; justify-content: space-between; font-size: 10.5px;
-  color: rgba(255,255,255,.5); padding: 2px 2px 6px; }
-.chart { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 88px; align-items: end;
-  background: rgba(255,255,255,.06); border-radius: 10px; padding: 10px 10px 4px; }
-.chart div { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;
-  font-size: 9.5px; color: rgba(255,255,255,.4); gap: 3px; }
-.chart i { width: 100%; max-width: 22px; border-radius: 3px; background: rgba(255,255,255,.28); }
-.chart .today i { background: #fff; } .chart .today { color: #fff; }
-.list { list-style: none; padding: 0; margin-top: 6px; font-size: 11.5px; }
-.list li { display: flex; justify-content: space-between; gap: 12px; padding: 2px; }
-.list li span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.list li span:last-child { color: rgba(255,255,255,.55); font-variant-numeric: tabular-nums; }
-.dots { display: flex; justify-content: center; gap: 2px; padding-top: 4px; }
+.ihead { display: flex; justify-content: space-between; font-size: 10.5px; color: rgba(255,255,255,.5); padding: 2px 2px 6px; }
+.ichart { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 88px; align-items: end;
+  background: rgba(255,255,255,.07); border-radius: 10px; padding: 10px 10px 4px; }
+.ichart div { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; font-size: 9.5px; color: rgba(255,255,255,.4); gap: 3px; }
+.ichart i { width: 100%; max-width: 22px; border-radius: 3px; background: rgba(255,255,255,.28); }
+.ichart .today i { background: #fff; } .ichart .today { color: #fff; }
+.ilist { list-style: none; padding: 0; margin-top: 6px; font-size: 11.5px; }
+.ilist li { display: flex; justify-content: space-between; gap: 12px; padding: 2px; }
+.ilist li span:last-child { color: rgba(255,255,255,.55); font-variant-numeric: tabular-nums; }
+.dots { display: flex; justify-content: center; gap: 2px; padding-top: 2px; }
 .dots button { width: 18px; height: 18px; display: grid; place-items: center; }
 .dots button::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.3); }
 .dots button[aria-current="true"]::after { background: rgba(255,255,255,.9); }
-
-/* ---------- hero ---------- */
-.hero { position: relative; padding-block: 352px 96px; text-align: center; }
-.callout { position: absolute; top: 58px; width: 230px; font-size: 13.5px; line-height: 1.45; color: var(--muted); }
-.callout b { color: var(--ink); font-weight: 600; }
-.callout::before { content: ""; position: absolute; top: 9px; width: 28px; height: 1px; background: var(--muted); opacity: .6; }
-.callout.left { right: calc(50% + 208px); text-align: right; }
-.callout.left::before { right: -40px; }
-.callout.right { left: calc(50% + 208px); text-align: left; }
-.callout.right::before { left: -40px; }
-.callout .sample { display: block; margin-top: 10px; font-size: 12px; opacity: .8; }
-h1 { font-stretch: 125%; font-weight: 800; font-size: clamp(54px, 11.5vw, 156px); line-height: .9;
-  letter-spacing: -.045em; }
-.lede { max-width: 34em; margin: 28px auto 0; font-size: clamp(18px, 2vw, 21px); color: var(--muted); }
-.lede strong { color: var(--ink); font-weight: 600; }
-.ctas { display: flex; flex-wrap: wrap; gap: 12px 22px; justify-content: center; align-items: center; margin-top: 36px; }
-.btn { display: inline-flex; align-items: center; height: 52px; padding: 0 28px; border-radius: 0 0 18px 18px;
-  background: var(--notch); color: #fff; font-weight: 650; font-size: 17px; text-decoration: none;
-  transition: border-radius .3s var(--ease); }
-.btn:hover { border-radius: 18px; }
-@media (prefers-color-scheme: dark) { .btn { box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); } }
-.fine { margin-top: 18px; font-size: 14px; color: var(--muted); }
-.touch-hint { display: none; }
+.try { margin-top: 26px; font-size: 14px; color: var(--muted); }
 
 /* ---------- sections ---------- */
-section { padding: 88px 0; border-top: 1px solid var(--line); }
-h2 { font-stretch: 115%; font-weight: 750; font-size: clamp(32px, 4.6vw, 54px); line-height: 1.02;
-  letter-spacing: -.03em; max-width: 16em; }
-.intro { max-width: 38em; margin-top: 18px; color: var(--muted); }
-.film { margin-top: 44px; background: #000; border-radius: 26px; padding: clamp(8px, 1.4vw, 16px); }
-.film video { width: 100%; border-radius: 16px; aspect-ratio: 1540 / 660; object-fit: cover; }
-.shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 24px; margin-top: 48px; }
-.shots img { border-radius: 14px; width: 100%; height: auto; }
-.shots figcaption { margin-top: 12px; font-size: 15px; color: var(--muted); max-width: 30em; }
-.shots figcaption b { color: var(--ink); font-weight: 650; }
+section { padding: 140px 0 0; }
+.kicker { display: block; font-size: 19px; font-weight: 600; color: var(--clay); margin-bottom: 18px; letter-spacing: -.01em; }
+.film { position: relative; margin-top: 56px; border-radius: 28px; overflow: hidden; background: #050506;
+  box-shadow: 0 0 0 1px var(--line), 0 50px 140px rgba(91,66,214,.18); }
+.film video { width: 100%; aspect-ratio: 16 / 9; }
+.film .pp { position: absolute; right: 18px; bottom: 18px; width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center; background: rgba(0,0,0,.55); backdrop-filter: blur(12px); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }
+.film .pp svg { width: 16px; height: 16px; fill: #fff; }
 
-table { width: 100%; border-collapse: collapse; margin-top: 44px; font-size: 15.5px; }
-th { text-align: left; font-weight: 500; font-size: 14px; color: var(--muted); padding: 0 16px 12px 0; }
-td { padding: 20px 16px 20px 0; border-top: 1px solid var(--line); vertical-align: top; }
+.bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-top: 56px; }
+.card { position: relative; overflow: hidden; background: var(--panel); border-radius: 28px; padding: 34px;
+  box-shadow: inset 0 0 0 1px var(--line); min-height: 340px; display: flex; flex-direction: column; }
+.card h3 { font-family: var(--display); font-stretch: 112%; font-weight: 750; font-size: 28px; line-height: 1.08; letter-spacing: -.025em; }
+.card p { margin-top: 10px; color: var(--muted); font-size: 16px; max-width: 30em; }
+.span-4 { grid-column: span 4; } .span-3 { grid-column: span 3; } .span-2 { grid-column: span 2; }
+.card .vis { margin-top: auto; padding-top: 30px; }
+.rings { display: flex; gap: clamp(16px, 4vw, 48px); justify-content: center; }
+.rings figure { text-align: center; }
+.rings svg { width: clamp(96px, 13vw, 150px); height: auto; transform: rotate(-90deg); }
+.rings circle { fill: none; stroke-width: 10; }
+.rings .track { stroke: rgba(255,255,255,.08); }
+.rings .fill { stroke-linecap: round; stroke-dasharray: 0 999; transition: stroke-dasharray 1.6s var(--ease); }
+.rings figcaption { margin-top: 12px; font-size: 14px; color: var(--muted); }
+.rings figcaption b { display: block; font-family: var(--display); font-stretch: 112%; font-size: 30px; color: var(--ink); letter-spacing: -.02em; line-height: 1.1; }
+.crabbig { height: 96px; image-rendering: pixelated; margin: 0 auto; }
+.speed { margin-top: 18px; display: flex; justify-content: center; gap: 6px; }
+.speed button { padding: 6px 12px; border-radius: 999px; font-size: 13px; color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+.speed button[aria-pressed="true"] { color: #000; background: var(--ink); box-shadow: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 12px; }
+.chip { width: 64px; height: 64px; display: grid; place-items: center; background: #000; border-radius: 0 0 18px 18px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.chip img { height: 30px; } .chip img.px { height: 24px; image-rendering: pixelated; }
+.bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; height: 150px; align-items: end; }
+.bars div { display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; font-size: 13px; color: var(--muted); }
+.bars i { width: 100%; border-radius: 6px; background: rgba(255,255,255,.16); height: 0; transition: height 1.2s var(--ease); }
+.bars .today i { background: var(--ink); } .bars .today { color: var(--ink); }
+.mini { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; background: linear-gradient(135deg, #1c1630, #0d2a2a); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.mini .isl { position: absolute; top: 0; left: 50%; width: 34%; height: 9%; transform: translateX(-50%); background: #000; border-radius: 0 0 8px 8px; }
+.mini.fs { background: linear-gradient(135deg, #2a1d14, #101820); }
+.mini.fs .isl { width: 20%; }
+.mini.fs .play { position: absolute; inset: 30% 42%; border-radius: 50%; background: rgba(255,255,255,.14); }
+.mini.nonotch .isl { box-shadow: 0 0 0 2px var(--clay); }
+.menu { width: min(220px, 100%); padding: 6px; border-radius: 10px; background: rgba(40,40,46,.9); box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 16px 40px rgba(0,0,0,.5);
+  font: 13px var(--sys); color: rgba(255,255,255,.88); list-style: none; }
+.menu li { padding: 3px 10px; border-radius: 5px; display: flex; justify-content: space-between; }
+.menu li.on { background: #2f6fde; color: #fff; }
+.menu li.sep { height: 1px; padding: 0; margin: 5px 8px; background: rgba(255,255,255,.12); }
+.menu li span { opacity: .5; }
+
+.strip { display: grid; grid-auto-flow: column; grid-auto-columns: max-content; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 56px max(24px, calc((100vw - 1112px) / 2)) 12px; scrollbar-width: none; }
+.strip::-webkit-scrollbar { display: none; }
+.strip figure { scroll-snap-align: center; width: min-content; }
+.strip img, .strip video { height: min(340px, 56vw); width: auto; max-width: none; border-radius: 20px; box-shadow: 0 0 0 1px var(--line); }
+.strip figcaption { margin-top: 14px; font-size: 15px; color: var(--muted); min-width: 100%; width: 0; }
+.strip figcaption b { color: var(--ink); font-weight: 600; }
+.strip-nav { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+.strip-nav button { width: 44px; height: 44px; border-radius: 50%; background: var(--panel-2); display: grid; place-items: center; }
+.strip-nav svg { width: 16px; height: 16px; stroke: var(--ink); fill: none; stroke-width: 2; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 56px; font-size: 16px; }
+th { text-align: left; font-weight: 500; font-size: 14px; color: var(--muted); padding: 0 20px 14px 0; }
+td { padding: 24px 20px 24px 0; border-top: 1px solid var(--line); vertical-align: top; }
 td:last-child, th:last-child { padding-right: 0; }
-td.name { white-space: nowrap; font-weight: 650; font-stretch: 110%; font-size: 19px; }
-.chip { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 0 0 12px 12px;
-  background: #000; vertical-align: middle; margin-right: 14px; }
-.chip img { height: 20px; width: auto; }
-.chip img.px { height: 16px; image-rendering: pixelated; }
+td.name { white-space: nowrap; font-family: var(--display); font-stretch: 110%; font-weight: 700; font-size: 20px; letter-spacing: -.015em; }
+td.name .chip { display: inline-grid; width: 44px; height: 44px; border-radius: 0 0 12px 12px; vertical-align: middle; margin-right: 16px; }
+td.name .chip img { height: 20px; } td.name .chip img.px { height: 15px; }
 td.src { color: var(--muted); width: 40%; }
-code { font: .9em ui-monospace, "SF Mono", Menlo, monospace; }
+code { font: .88em ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink); }
 
-.split { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 44px; }
-.split h3 { font-stretch: 110%; font-size: 21px; font-weight: 700; letter-spacing: -.01em; }
-.split p { margin-top: 10px; color: var(--muted); max-width: 32em; }
-.promises { list-style: none; padding: 0; margin-top: 48px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 48px; }
-.promises li { padding: 14px 0 14px 28px; border-top: 1px solid var(--line); position: relative; }
-.promises li::before { content: ""; position: absolute; left: 2px; top: 23px; width: 12px; height: 7px;
-  border: solid var(--ink); border-width: 0 0 2px 2px; transform: rotate(-45deg); }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 56px; }
+.split .card { min-height: 0; }
+.promises { list-style: none; padding: 0; margin-top: 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.promises li { background: var(--panel); border-radius: 20px; padding: 22px 24px 22px 60px; position: relative; box-shadow: inset 0 0 0 1px var(--line); color: rgba(245,245,247,.86); font-size: 16px; }
+.promises li::before { content: ""; position: absolute; left: 24px; top: 26px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5 9.3l2.6 2.5L13 6.4' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 
-.details { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px 40px; margin-top: 48px; }
-.details dt { font-weight: 700; font-stretch: 108%; font-size: 18px; padding-top: 16px; border-top: 2px solid var(--ink); }
-.details dd { margin-top: 8px; color: var(--muted); font-size: 15.5px; }
+.steps { list-style: none; padding: 0; margin-top: 56px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: s; }
+.steps li { counter-increment: s; background: var(--panel); border-radius: 28px; padding: 32px; box-shadow: inset 0 0 0 1px var(--line); color: var(--muted); }
+.steps li::before { content: counter(s); display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: #000;
+  font-family: var(--display); font-weight: 800; font-size: 20px; margin-bottom: 22px; }
+.steps b { color: var(--ink); font-weight: 600; }
+.source { margin-top: 16px; display: grid; grid-template-columns: 1fr 1.5fr; gap: 32px; align-items: center; background: var(--panel); border-radius: 28px; padding: 32px; box-shadow: inset 0 0 0 1px var(--line); }
+.source h3 { font-family: var(--display); font-stretch: 110%; font-size: 24px; font-weight: 750; letter-spacing: -.02em; }
+.source p { margin-top: 8px; color: var(--muted); font-size: 15.5px; }
+pre.code { background: #000; border-radius: 16px; padding: 20px 22px; overflow-x: auto; font: 14px/1.75 ui-monospace, "SF Mono", Menlo, monospace; color: #E6E8EB; box-shadow: inset 0 0 0 1px var(--line); }
+pre.code .c { color: rgba(230,232,235,.42); }
 
-.steps { list-style: none; padding: 0; margin-top: 48px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; counter-reset: step; }
-.steps li { counter-increment: step; color: var(--muted); }
-.steps li::before { content: counter(step); display: block; font-stretch: 125%; font-weight: 800; font-size: 64px;
-  line-height: 1; letter-spacing: -.04em; color: var(--ink); margin-bottom: 14px; }
-.steps b { color: var(--ink); font-weight: 650; }
-.source { margin-top: 64px; display: grid; grid-template-columns: 1fr 1.4fr; gap: 40px; align-items: start; }
-.source h3 { font-stretch: 110%; font-size: 21px; font-weight: 700; }
-.source p { margin-top: 10px; color: var(--muted); font-size: 15.5px; }
-pre { background: #000; color: #E6E8EB; border-radius: 0 0 18px 18px; padding: 22px 24px; overflow-x: auto;
-  font: 14px/1.7 ui-monospace, "SF Mono", Menlo, monospace; }
-pre .c { color: rgba(230,232,235,.45); }
+.final { position: relative; margin-top: 160px; padding: 120px 24px 130px; text-align: center; overflow: hidden; isolation: isolate; }
+.final .glow { inset: 10% 10%; opacity: .4; }
+.final img { height: 72px; image-rendering: pixelated; margin: 0 auto 36px; }
+.final h2 { font-size: clamp(40px, 7vw, 96px); }
+.final .ctas { margin-top: 40px; }
 
-footer { border-top: 1px solid var(--line); padding: 40px 0 56px; font-size: 14px; color: var(--muted); }
+footer { border-top: 1px solid var(--line); padding: 36px 0 56px; font-size: 13.5px; color: var(--muted); }
 footer .wrap { display: grid; grid-template-columns: 1fr 2fr; gap: 32px; }
 footer p + p { margin-top: 8px; }
 
-/* ---------- responsive ---------- */
-@media (max-width: 980px) {
-  .callout { display: none; }
-  .touch-hint { display: block; }
-  .shots, .details, .steps { grid-template-columns: 1fr 1fr; }
+/* scroll-linked: the lid tilts open as the laptop comes into view */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .lid { animation: lidOpen linear both; animation-timeline: view(); animation-range: entry 0% cover 42%; }
+    @keyframes lidOpen { from { transform: rotateX(24deg) scale(.92); } to { transform: none; } }
+  }
 }
-@media (max-width: 760px) {
-  .menubar nav { display: none; }
-  .menubar .app { display: none; }
-  .menubar { justify-content: flex-end; }
-  .island { width: 236px; }
-  .island.open { width: min(360px, calc(100vw - 24px)); }
-  .cam { left: calc(50% - 22px); }
+
+@media (max-width: 900px) {
+  .nav nav { display: none; } .nav .btn { margin-left: auto; }
+  .bento { grid-template-columns: 1fr 1fr; }
+  .span-4, .span-3 { grid-column: span 2; } .span-2 { grid-column: span 1; }
+  .steps { grid-template-columns: 1fr; }
+  .source { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
   .wrap { padding: 0 16px; }
-  .hero { padding-block: 330px 72px; }
-  section { padding: 64px 0; }
-  .shots, .details, .steps, .split, .promises, .source, footer .wrap { grid-template-columns: 1fr; }
-  .split { gap: 32px; }
-  .steps { gap: 28px; }
-  table, tbody, tr, td { display: block; }
-  thead { display: none; }
-  tr { border-top: 1px solid var(--line); padding: 18px 0; }
-  td { border: 0; padding: 4px 0; }
-  td.src { width: auto; font-size: 14.5px; }
+  .hero { padding-top: 116px; }
+  section { padding-top: 96px; }
+  .bento, .split, .promises { grid-template-columns: 1fr; }
+  .span-4, .span-3, .span-2 { grid-column: auto; }
+  .card { padding: 26px; min-height: 0; border-radius: 22px; }
+  .film { border-radius: 16px; }
+  table, tbody, tr, td { display: block; } thead { display: none; }
+  tr { border-top: 1px solid var(--line); padding: 20px 0; } td { border: 0; padding: 4px 0; } td.src { width: auto; font-size: 15px; }
+  footer .wrap { grid-template-columns: 1fr; }
+  .final { padding: 80px 16px 90px; margin-top: 110px; }
 }
-@media (max-width: 420px) { .menubar .gh { display: none; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0s !important; transition-delay: 0s !important; }
   html { scroll-behavior: auto; }
@@ -216,84 +279,163 @@ footer p + p { margin-top: 8px; }
 </head>
 <body>
 
-<header class="menubar">
-  <nav aria-label="Sections">
-    <a class="app" href="#top">Claude Notch</a>
-    <a href="#providers">Providers</a>
-    <a href="#privacy">Privacy</a>
-    <a href="#install">Install</a>
-  </nav>
-  <a class="gh" href="https://github.com/stevemcqueenz/claude-notch-tracker">GitHub</a>
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="assets/clawd-0.png" alt="">Claude Notch</a>
+    <nav aria-label="Sections">
+      <a href="#film">Film</a><a href="#features">Features</a><a href="#providers">Providers</a><a href="#privacy">Privacy</a><a href="#install">Install</a>
+      <a href="https://github.com/stevemcqueenz/claude-notch-tracker">GitHub</a>
+    </nav>
+    <a class="btn btn-primary" href="https://github.com/stevemcqueenz/claude-notch-tracker/releases/latest">Download</a>
+  </div>
 </header>
 
-<div class="island" id="island">
-  <div class="island-row">
-    <button class="who" id="who" type="button" aria-label="Switch provider"><img id="whoImg" src="assets/clawd-0.png" alt=""></button>
-    <button class="toggle" id="toggle" type="button" aria-expanded="false" aria-controls="drop">
-      <span class="cam" aria-hidden="true"></span>
-      <span id="pill">42%</span>
-      <span id="pillMark" aria-hidden="true"></span>
-    </button>
-  </div>
-  <div class="drop" id="drop">
-    <div class="pager" id="pager">
-      <div class="pages" id="pages">
-        <div class="page swap" id="page1" aria-label="Limits"></div>
-        <div class="page swap" id="page2" aria-label="Details"></div>
-      </div>
-    </div>
-    <div class="dots" role="group" aria-label="Island page">
-      <button type="button" data-page="0" aria-label="Limits page" aria-current="true"></button>
-      <button type="button" data-page="1" aria-label="Details page" aria-current="false"></button>
-    </div>
-  </div>
-</div>
-
 <main id="top">
-  <div class="hero wrap">
-    <p class="callout left"><b>Click Clawd</b> to switch between Claude, Codex, Antigravity, DeepSeek and opencode-go.</p>
-    <p class="callout right"><b>Click the percentage</b> to open or close. Swipe, scroll sideways or use the dots for the second page.
-      <span class="sample">This island runs on sample numbers.</span></p>
-
-    <h1>Claude Notch</h1>
-    <p class="lede"><strong>Your AI usage limits, live beside your Mac's camera.</strong> Reset countdowns, today's spend and your running sessions are one click away. Click elsewhere and the island tucks back into the notch.</p>
-    <p class="touch-hint fine">The island at the top of this page works like the app. Tap it, and tap the crab to switch provider. Numbers are samples.</p>
-    <div class="ctas">
-      <a class="btn" href="https://github.com/stevemcqueenz/claude-notch-tracker/releases/latest">Download for macOS</a>
-      <a href="https://github.com/stevemcqueenz/claude-notch-tracker">View the source on GitHub</a>
+  <div class="hero">
+    <div class="wrap">
+      <h1 class="display">Your AI limits.<span>In the notch.</span></h1>
+      <p class="lead"><b>Claude, Codex, Antigravity, DeepSeek and opencode-go usage, live beside your Mac's camera.</b> Limits, reset countdowns and spend are one click away, and gone again when you click elsewhere.</p>
+      <div class="ctas">
+        <a class="btn btn-primary" href="https://github.com/stevemcqueenz/claude-notch-tracker/releases/latest">Download for macOS</a>
+        <a class="btn btn-ghost" href="#film"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Watch the film</a>
+      </div>
+      <p class="fine">Free and open source. macOS 14 or later, Apple Silicon or Intel. Signed and notarized.</p>
     </div>
-    <p class="fine">Free and MIT licensed. macOS 14 or later on Apple Silicon or Intel. Signed and notarized.</p>
+
+    <div class="mac" id="mac">
+      <div class="glow" aria-hidden="true"></div>
+      <div class="lid">
+        <div class="screen" id="screen">
+          <div class="desk" id="desk" aria-hidden="true">
+            <div class="wall"></div>
+            <div class="side"></div>
+            <div class="win"><div class="chrome"><i></i><i></i><i></i></div>
+<pre><span class="d">~/code/billing</span> <span class="g">main</span>
+<span class="c">❯</span> refactor the billing webhooks and add retries
+
+<span class="c">●</span> Reading src/billing/webhooks.ts
+<span class="c">●</span> Editing 4 files
+<span class="c">●</span> Running tests <span class="d">…</span> <span class="g">128 passed</span></pre></div>
+            <div class="mbar"><b>Terminal</b><span>Shell</span><span>Edit</span><span>View</span><span>Window</span><span class="r">Sun 9:41</span></div>
+          </div>
+
+          <div class="island" id="island">
+            <div class="irow">
+              <button class="who" id="who" type="button" aria-label="Switch provider"><img id="whoImg" src="assets/clawd-0.png" alt=""></button>
+              <button class="toggle" id="toggle" type="button" aria-expanded="false" aria-controls="drop"><span id="pill">42%</span><span id="pillMark" aria-hidden="true"></span></button>
+            </div>
+            <div class="drop" id="drop">
+              <div class="pager" id="pager"><div class="pages" id="pages">
+                <div class="page swap" id="page1"></div><div class="page swap" id="page2"></div>
+              </div></div>
+              <div class="dots" role="group" aria-label="Island page">
+                <button type="button" data-page="0" aria-label="Limits page" aria-current="true"></button>
+                <button type="button" data-page="1" aria-label="Details page" aria-current="false"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hinge"></div>
+    </div>
+    <p class="try wrap">This notch works. Click the percentage to open it, Clawd to switch provider, and swipe for page two. The numbers are samples.</p>
   </div>
 
-  <section aria-labelledby="h-film">
-    <div class="wrap">
-      <h2 id="h-film">The real app, on a real notch</h2>
-      <p class="intro">Collapsed, it's Clawd and your session percentage on either side of the camera. Open, it's a two-page card you can swipe through. There's no Dock icon and nothing in your menu bar.</p>
+  <section id="film" aria-labelledby="h-film">
+    <div class="wrap center">
+      <span class="kicker">The film</span>
+      <h2 class="display" id="h-film">Thirty seconds<br>in the notch.</h2>
       <div class="film">
-        <video src="demo.mp4" poster="demo-poster.png" autoplay muted loop playsinline preload="metadata"
-          aria-label="Screen recording: clicking the notch expands the island, swiping between pages, then switching providers"></video>
+        <video id="filmVideo" src="film.mp4" poster="film-poster.png" muted loop playsinline preload="metadata"
+          aria-label="Product film: a coding session, then the Claude Notch island opens to show limits, spend, five providers, and Clawd speeding up near the limit"></video>
+        <button class="pp" id="pp" type="button" aria-label="Play film"><svg viewBox="0 0 16 16" id="ppIcon"><path d="M4 2.5v11l9-5.5z"/></svg></button>
       </div>
     </div>
   </section>
 
-  <section aria-labelledby="h-shots">
+  <section id="features" aria-labelledby="h-features">
     <div class="wrap">
-      <h2 id="h-shots">Every page of the island</h2>
-      <div class="shots">
-        <figure><img src="page-limits.png" width="816" height="600" loading="lazy" alt="Limits page: 5-Hour, 7-Day and Fable weekly limits, today's cost, credits and all-time spend"><figcaption><b>Limits.</b> The 5-hour, 7-day and Fable weekly bars from the Claude app, plus today's cost.</figcaption></figure>
-        <figure><img src="page-sessions.png" width="816" height="600" loading="lazy" alt="Week chart of the last 7 days of local spend above today's conversations"><figcaption><b>Week and sessions.</b> Seven days of spend, then today's conversations by name.</figcaption></figure>
-        <figure><img src="page-alltime.png" width="816" height="600" loading="lazy" alt="All-time top projects ranked by spend"><figcaption><b>All-time projects.</b> Tap the sessions block to see your biggest projects ever.</figcaption></figure>
-        <figure><img src="codex-limits.png" width="816" height="600" loading="lazy" alt="Codex limits page: rate-limit windows above the 7-day token chart"><figcaption><b>Codex limits.</b> Rate-limit windows and a 7-day token chart.</figcaption></figure>
-        <figure><img src="codex-tasks.png" width="816" height="600" loading="lazy" alt="Codex detail page: weekly and all-time totals above recent tasks"><figcaption><b>Codex tasks.</b> Account totals and your recent tasks.</figcaption></figure>
-        <figure><img src="settings.png" width="972" height="628" loading="lazy" alt="Right-click menu: provider, icon, rotate providers, pause, hide in full screen, launch at login, updates"><figcaption><b>Settings.</b> Everything lives in the island's right-click menu.</figcaption></figure>
+      <span class="kicker">Features</span>
+      <h2 class="display" id="h-features">Everything you'd check,<br>without checking.</h2>
+      <div class="bento">
+        <article class="card span-4">
+          <h3>Your real limits, not estimates.</h3>
+          <p>The same 5-hour, 7-day and Fable weekly bars the Claude app shows, each with a reset countdown. Amber from 66%, red from 85%.</p>
+          <div class="vis rings" id="rings">
+            <figure><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="50"/><circle class="fill" cx="60" cy="60" r="50" stroke="var(--ok)" data-v=".42"/></svg><figcaption><b>42%</b>5-hour, resets in 2h 18m</figcaption></figure>
+            <figure><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="50"/><circle class="fill" cx="60" cy="60" r="50" stroke="var(--warn)" data-v=".71"/></svg><figcaption><b>71%</b>7-day, resets in 3d 6h</figcaption></figure>
+            <figure><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="50"/><circle class="fill" cx="60" cy="60" r="50" stroke="var(--ok)" data-v=".18"/></svg><figcaption><b>18%</b>Fable, resets in 3d 6h</figcaption></figure>
+          </div>
+        </article>
+        <article class="card span-2">
+          <h3>Clawd keeps pace.</h3>
+          <p>He walks faster as you near a limit and stops when you're out.</p>
+          <div class="vis">
+            <img class="crabbig" id="crabBig" src="assets/clawd-0.png" alt="Clawd, the pixel crab">
+            <div class="speed" role="group" aria-label="Usage">
+              <button type="button" data-u=".2" aria-pressed="false">20%</button><button type="button" data-u=".7" aria-pressed="true">70%</button><button type="button" data-u=".95" aria-pressed="false">95%</button><button type="button" data-u="1" aria-pressed="false">100%</button>
+            </div>
+          </div>
+        </article>
+        <article class="card span-3">
+          <h3>Five providers, one click.</h3>
+          <p>Click the icon to cycle, or let the island rotate every 10 seconds, 30 seconds or minute. Only what's installed shows up.</p>
+          <div class="vis chips">
+            <span class="chip"><img class="px" src="assets/clawd-0.png" alt="Claude"></span>
+            <span class="chip"><img src="assets/codex.png" alt="Codex"></span>
+            <span class="chip"><img src="assets/antigravity.png" alt="Antigravity"></span>
+            <span class="chip"><img src="assets/deepseek.png" alt="DeepSeek"></span>
+            <span class="chip"><img src="assets/opencodego.png" alt="opencode-go"></span>
+          </div>
+        </article>
+        <article class="card span-3">
+          <h3>Spend, day by day.</h3>
+          <p>A 7-day chart in the island, today's cost with a projection for tonight, and every session by name.</p>
+          <div class="vis bars" id="bars" aria-hidden="true"></div>
+        </article>
+        <article class="card span-2">
+          <h3>Out of the way in full screen.</h3>
+          <p>Optionally tucks into the notch while a film or game owns the display.</p>
+          <div class="vis"><div class="mini fs"><div class="isl"></div><div class="play"></div></div></div>
+        </article>
+        <article class="card span-2">
+          <h3>A notch on every Mac.</h3>
+          <p>No notch? Claude Notch draws its own at the top of the screen.</p>
+          <div class="vis"><div class="mini nonotch"><div class="isl"></div></div></div>
+        </article>
+        <article class="card span-2">
+          <h3>Quiet by design.</h3>
+          <p>No Dock icon, no menu-bar item. Settings live in a right-click menu, and updates install themselves.</p>
+          <div class="vis"><ul class="menu" aria-hidden="true"><li>Provider<span>›</span></li><li>Icon<span>›</span></li><li>Rotate providers<span>›</span></li><li class="sep"></li><li>Hide in full screen</li><li class="on">Launch at Login</li><li>Check for Updates…</li></ul></div>
+        </article>
       </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-real">
+    <div class="wrap">
+      <span class="kicker">The real app</span>
+      <h2 class="display" id="h-real">Recorded on a real notch.</h2>
+    </div>
+    <div class="strip" id="strip">
+      <figure><video src="demo.mp4" poster="demo-poster.png" muted loop playsinline autoplay preload="metadata" aria-label="Screen recording of the app opening, swiping and switching sessions"></video><figcaption><b>In motion.</b> Click to open, swipe between pages, click away to close.</figcaption></figure>
+      <figure><img src="page-limits.png" width="816" height="600" loading="lazy" alt="Limits page: 5-Hour, 7-Day and Fable weekly limits, today's cost, credits and all-time spend"><figcaption><b>Limits.</b> 5-hour, 7-day and Fable weekly bars, plus today's cost.</figcaption></figure>
+      <figure><img src="page-sessions.png" width="816" height="600" loading="lazy" alt="Week chart of the last 7 days of local spend above today's conversations"><figcaption><b>Week and sessions.</b> Seven days of spend, then today's conversations.</figcaption></figure>
+      <figure><img src="page-alltime.png" width="816" height="600" loading="lazy" alt="All-time top projects ranked by spend"><figcaption><b>All-time projects.</b> Tap the sessions block to see your biggest projects.</figcaption></figure>
+      <figure><img src="codex-limits.png" width="816" height="600" loading="lazy" alt="Codex limits page: rate-limit windows above the 7-day token chart"><figcaption><b>Codex limits.</b> Rate-limit windows and a 7-day token chart.</figcaption></figure>
+      <figure><img src="codex-tasks.png" width="816" height="600" loading="lazy" alt="Codex detail page: weekly and all-time totals above recent tasks"><figcaption><b>Codex tasks.</b> Account totals and your recent tasks.</figcaption></figure>
+      <figure><img src="settings.png" width="972" height="628" loading="lazy" alt="Right-click menu: provider, icon, rotate providers, pause, hide in full screen, launch at login, updates"><figcaption><b>Settings.</b> Everything lives in the right-click menu.</figcaption></figure>
+    </div>
+    <div class="wrap strip-nav">
+      <button type="button" data-dir="-1" aria-label="Previous"><svg viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg></button>
+      <button type="button" data-dir="1" aria-label="Next"><svg viewBox="0 0 16 16"><path d="m6 3 5 5-5 5"/></svg></button>
     </div>
   </section>
 
   <section id="providers" aria-labelledby="h-providers">
     <div class="wrap">
-      <h2 id="h-providers">Five providers, one island</h2>
-      <p class="intro">Only providers installed on your Mac appear. Click the icon on the left of the island to cycle through them, or let it rotate every 10 seconds, 30 seconds or minute.</p>
+      <span class="kicker">Providers</span>
+      <h2 class="display" id="h-providers">Wherever you spend tokens.</h2>
       <table>
         <thead><tr><th>Provider</th><th>What you see</th><th>Where it comes from</th></tr></thead>
         <tbody>
@@ -319,16 +461,11 @@ footer p + p { margin-top: 8px; }
 
   <section id="privacy" aria-labelledby="h-privacy">
     <div class="wrap">
-      <h2 id="h-privacy">Local-first, and clear about what's local</h2>
+      <span class="kicker">Privacy</span>
+      <h2 class="display" id="h-privacy">Local-first.<br>Honest about it.</h2>
       <div class="split">
-        <div>
-          <h3>Limits come from the provider</h3>
-          <p>The limit bars use the same endpoint the official apps do, so they count everything: desktop, terminal, cloud and remote sessions.</p>
-        </div>
-        <div>
-          <h3>Spend and tokens are counted on your Mac</h3>
-          <p>Cost and token figures come from your local logs and are marked <i>local</i>. Work done in the cloud counts toward your limits but not toward the local dollar figure.</p>
-        </div>
+        <article class="card"><h3>Limits come from the provider.</h3><p>The limit bars use the same endpoint the official apps do, so they count everything: desktop, terminal, cloud and remote sessions.</p></article>
+        <article class="card"><h3>Spend is counted on your Mac.</h3><p>Cost and token figures come from your local logs and are marked <i>local</i>. Cloud work counts toward your limits, not toward the local dollar figure.</p></article>
       </div>
       <ul class="promises">
         <li>Talks only to each provider's own service. No analytics, no servers of its own.</li>
@@ -336,44 +473,38 @@ footer p + p { margin-top: 8px; }
         <li>Reads the Claude Code CLI login without refreshing it, so your terminal session stays as it was.</li>
         <li>Asks through the standard macOS Keychain prompt before reading anything stored there.</li>
       </ul>
-      <p class="intro">Read the <a href="https://github.com/stevemcqueenz/claude-notch-tracker/blob/main/docs/providers.md">provider architecture</a> for every data source and security boundary.</p>
-    </div>
-  </section>
-
-  <section aria-labelledby="h-details">
-    <div class="wrap">
-      <h2 id="h-details">Small things it gets right</h2>
-      <dl class="details">
-        <div><dt>Clawd keeps pace</dt><dd>The crab walks faster as you near a limit and stops when you're out. Prefer a mono crab or the Claude spark? Pick one from the Icon menu.</dd></div>
-        <div><dt>Out of the way in full screen</dt><dd>Turn on Hide in full screen and the island tucks into the notch while a film or game owns the display.</dd></div>
-        <div><dt>A notch on every Mac</dt><dd>No notch? It draws its own at the top of the screen.</dd></div>
-        <div><dt>DeepSeek's clock</dt><dd>A dot shows whether you're paying peak or off-peak rates right now, Chinese public holidays included.</dd></div>
-        <div><dt>Spend before it happens</dt><dd>Today's Claude cost comes with a projection for tonight, so you can pace yourself.</dd></div>
-        <div><dt>Keeps itself current</dt><dd>Updates arrive automatically. Check for one any time from the right-click menu.</dd></div>
-      </dl>
+      <p class="fine">Every data source and security boundary is in the <a href="https://github.com/stevemcqueenz/claude-notch-tracker/blob/main/docs/providers.md">provider architecture</a>.</p>
     </div>
   </section>
 
   <section id="install" aria-labelledby="h-install">
     <div class="wrap">
-      <h2 id="h-install">Install it in a minute</h2>
+      <span class="kicker">Install</span>
+      <h2 class="display" id="h-install">Running in a minute.</h2>
       <ol class="steps">
         <li><b>Download</b> <code>Claude Notch.zip</code> from the <a href="https://github.com/stevemcqueenz/claude-notch-tracker/releases/latest">latest release</a>, unzip it and drag the app to Applications.</li>
         <li><b>Open it.</b> It's notarized, so there's no security warning. When the Keychain prompt appears, choose <b>Always Allow</b>.</li>
         <li><b>Keep it around.</b> Right-click the island and choose Launch at Login.</li>
       </ol>
       <div class="source">
-        <div>
-          <h3>Build from source</h3>
-          <p>You'll need a signed-in Claude, Codex, Antigravity, DeepSeek or opencode-go account, and the full Xcode toolchain for the SwiftUI macros.</p>
-        </div>
-        <pre><code>git clone https://github.com/stevemcqueenz/claude-notch-tracker
+        <div><h3>Build from source</h3><p>Needs the full Xcode toolchain for the SwiftUI macros, plus a signed-in Claude, Codex, Antigravity, DeepSeek or opencode-go account.</p></div>
+        <pre class="code"><code>git clone https://github.com/stevemcqueenz/claude-notch-tracker
 cd claude-notch-tracker
 swift run ClaudeNotch       <span class="c"># run it</span>
 bash scripts/make-app.sh    <span class="c"># build the .app and a zip</span></code></pre>
       </div>
     </div>
   </section>
+
+  <div class="final">
+    <div class="glow" aria-hidden="true"></div>
+    <img src="assets/clawd-0.png" alt="" id="crabFinal">
+    <h2 class="display">Put your limits<br>in the notch.</h2>
+    <div class="ctas">
+      <a class="btn btn-primary" href="https://github.com/stevemcqueenz/claude-notch-tracker/releases/latest">Download for macOS</a>
+      <a class="btn btn-ghost" href="https://github.com/stevemcqueenz/claude-notch-tracker">View on GitHub</a>
+    </div>
+  </div>
 </main>
 
 <footer>
@@ -387,174 +518,139 @@ bash scripts/make-app.sh    <span class="c"># build the .app and a zip</span></c
 </footer>
 
 <script>
-// Sample data, shaped like the app's tiles. r = seconds until reset (counts down live).
-const H = 3600, D = 86400;
+const $ = id => document.getElementById(id);
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const H = 3600, D = 86400, t0 = Date.now();
+
+// ---------- the laptop screen: a fixed design size, scaled to fit ----------
+const DESIGN = () => innerWidth < 640 ? 560 : 760;
+function fit() {
+  const w = $('screen').clientWidth, dw = DESIGN(), k = w / dw;
+  $('desk').style.width = dw + 'px'; $('desk').style.height = dw * .625 + 'px'; $('desk').style.transform = `scale(${k})`;
+  $('island').style.transform = `translateX(-50%) scale(${k})`; $('island').style.transformOrigin = '50% 0';
+}
+addEventListener('resize', fit); fit();
+
+// ---------- island: sample data shaped like the app's tiles ----------
 const PROVIDERS = [
   { name: 'Claude', crab: true, pill: { used: .42 },
-    tiles: [
-      { l: '5-Hour', used: .42, r: 2*H + 18*60 }, { l: '7-Day', used: .71, r: 3*D + 6*H },
-      { l: 'Fable', used: .18, r: 3*D + 6*H },
-      { l: 'cost today · local', v: '$38.20', s: '~$61.40 by tonight' },
-      { l: 'credits', v: '€35.52', s: '14% used' },
-      { l: 'all-time · local', v: '$4,812.06', s: '2.1B tokens' } ],
+    tiles: [{ l: '5-Hour', used: .42, r: 2*H + 18*60 }, { l: '7-Day', used: .71, r: 3*D + 6*H }, { l: 'Fable', used: .18, r: 3*D + 6*H },
+      { l: 'cost today · local', v: '$38.20', s: '~$61.40 by tonight' }, { l: 'credits', v: '€35.52', s: '14% used' }, { l: 'all-time · local', v: '$4,812.06', s: '2.1B tokens' }],
     week: { l: 'last 7 days · local', vals: [12.4, 31.9, 8.2, 44.7, 27.3, 19.8, 38.2], fmt: v => '$' + Math.round(v) },
     list: { l: 'sessions today', rows: [['Refactor billing webhooks', '$14.82'], ['Notch landing page', '$11.37'], ['Fix flaky snapshot tests', '$6.01']] } },
   { name: 'Codex', mark: 'assets/codex.png', pill: { used: .23 },
-    tiles: [
-      { l: '5-Hour', used: .23, r: 3*H + 41*60 }, { l: '7-Day', used: .54, r: 4*D + 2*H },
-      { l: 'tokens today · account', v: '1.8M' }, { l: 'credits', v: '120' },
-      { l: 'plan', v: 'Pro' }, { l: 'tokens · all-time', v: '312.4M' } ],
+    tiles: [{ l: '5-Hour', used: .23, r: 3*H + 41*60 }, { l: '7-Day', used: .54, r: 4*D + 2*H }, { l: 'tokens today · account', v: '1.8M' },
+      { l: 'credits', v: '120' }, { l: 'plan', v: 'Pro' }, { l: 'tokens · all-time', v: '312.4M' }],
     week: { l: 'last 7 days · account', vals: [2.1, 4.8, 3.3, 0.9, 6.2, 5.1, 1.8], fmt: v => v.toFixed(1) + 'M' },
     list: { l: 'recent tasks', rows: [['Add retry to sync client', '4m'], ['Migrate tests to Swift Testing', '1h'], ['Audit keychain access', '3h']] } },
   { name: 'Antigravity', mark: 'assets/antigravity.png', pill: { used: .78 },
-    tiles: [
-      { l: '5-Hour', used: .78, r: 1*H + 7*60 }, { l: '7-Day', used: .31, r: 5*D + 9*H },
-      { l: 'tokens today · local', v: '920K' }, { l: 'tokens · all-time', v: '88.6M' },
-      { l: 'thinking · all-time', v: '21.3M' } ],
+    tiles: [{ l: '5-Hour', used: .78, r: 1*H + 7*60 }, { l: '7-Day', used: .31, r: 5*D + 9*H }, { l: 'tokens today · local', v: '920K' },
+      { l: 'tokens · all-time', v: '88.6M' }, { l: 'thinking · all-time', v: '21.3M' }],
     week: { l: 'last 7 days · local', vals: [0.4, 1.2, 0.8, 2.6, 1.9, 0.3, 0.9], fmt: v => v.toFixed(1) + 'M' },
     list: { l: 'top projects', rows: [['notch-tracker', '31.2M'], ['dotfiles', '12.8M'], ['blog', '6.4M']] } },
   { name: 'DeepSeek', mark: 'assets/deepseek.png', pill: { text: '¥86', dot: 'var(--green)' },
-    tiles: [
-      { l: 'balance', v: '¥86.40' }, { l: 'pricing now', v: 'off-peak', tint: 'good', s: 'standard rate' },
-      { l: 'spent today · observed', v: '¥3.12' }, { l: 'last 7 days · observed', v: '¥27.80' } ],
-    week: { l: 'last 7 days · observed', vals: [4.1, 3.6, 5.2, 2.8, 4.9, 4.1, 3.1], fmt: v => '¥' + v.toFixed(1) },
+    tiles: [{ l: 'balance', v: '¥86.40' }, { l: 'pricing now', v: 'off-peak', tint: 'good', s: 'standard rate' },
+      { l: 'spent today · observed', v: '¥3.12' }, { l: 'last 7 days · observed', v: '¥27.80' }],
     list: { l: 'peak hours, Beijing time', rows: [['09:00–12:00 on working days', '2×'], ['14:00–18:00 on working days', '2×'], ['Public holidays', 'off-peak']] } },
   { name: 'opencode-go', mark: 'assets/opencodego.png', pill: { used: .88 },
-    tiles: [
-      { l: '5-Hour', used: .12, r: 4*H + 2*60 }, { l: '7-Day', used: .47, r: 2*D + 11*H },
-      { l: 'Monthly', used: .88, r: 9*D + 4*H },
-      { l: 'zen balance', v: '$18.40' }, { l: 'Renews', v: 'in 9d', s: 'monthly plan' },
-      { l: 'Sessions left', v: '12' } ],
-    week: { l: 'last 7 days · local', vals: [1.2, 0.8, 2.4, 1.9, 0.6, 2.2, 1.4], fmt: v => '$' + v.toFixed(2) },
+    tiles: [{ l: '5-Hour', used: .12, r: 4*H + 2*60 }, { l: '7-Day', used: .47, r: 2*D + 11*H }, { l: 'Monthly', used: .88, r: 9*D + 4*H },
+      { l: 'zen balance', v: '$18.40' }, { l: 'Renews', v: 'in 9d', s: 'monthly plan' }, { l: 'Sessions left', v: '12' }],
     list: { l: 'sessions today', rows: [['Rewrite parser in Zig', '$0.84'], ['README pass', '$0.31'], ['CI cache fix', '$0.22']] } },
 ];
-
-const $ = id => document.getElementById(id);
 const island = $('island'), toggle = $('toggle'), pages = $('pages');
-const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const t0 = Date.now();
 let current = 0, page = 0, openedAtY = 0;
-
-// Same thresholds and formats as the app (Fmt.until, ringState, barColor).
 const state = u => u < .66 ? 'ok' : u < .85 ? 'warn' : 'hot';
-const until = secs => {
-  const s = Math.max(0, Math.floor(secs)), d = s / D | 0, h = (s % D) / H | 0, m = (s % H) / 60 | 0;
-  return d ? `${d}d ${h}h` : h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`;
-};
-const left = r => r - (Date.now() - t0) / 1000;
 const RING = { ok: 'var(--ok)', warn: 'var(--warn)', hot: 'var(--hot)' };
+const until = secs => { const s = Math.max(0, Math.floor(secs)), d = s / D | 0, h = (s % D) / H | 0, m = (s % H) / 60 | 0;
+  return d ? `${d}d ${h}h` : h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`; };
+const left = r => r - (Date.now() - t0) / 1000;
 
 function tile(t) {
-  if ('used' in t) {
-    const st = state(t.used);
-    return `<div class="tile"><div class="l">${t.l}</div><div class="v ${st === 'ok' ? '' : st}">${Math.round(t.used * 100)}%</div><div class="s" data-r="${t.r}">resets in ${until(left(t.r))}</div></div>`;
-  }
+  if ('used' in t) { const st = state(t.used);
+    return `<div class="tile"><div class="l">${t.l}</div><div class="v ${st === 'ok' ? '' : st}">${Math.round(t.used * 100)}%</div><div class="s" data-r="${t.r}">resets in ${until(left(t.r))}</div></div>`; }
   return `<div class="tile"><div class="l">${t.l}</div><div class="v ${t.tint || ''}">${t.v}</div>${t.s ? `<div class="s">${t.s}</div>` : ''}</div>`;
 }
-
 function chart(w) {
-  const max = Math.max(...w.vals), peak = w.vals.indexOf(max);
-  const days = w.vals.map((_, i) => 'SMTWTFS'[(new Date().getDay() - 6 + i + 7) % 7]);
-  const bars = w.vals.map((v, i) => `<div class="${i === 6 ? 'today' : ''}"><i style="height:${Math.max(4, v / max * 52)}px"></i>${days[i]}</div>`).join('');
-  return `<div class="chart-head"><span>${w.l}</span><span>peak ${w.fmt(max)}${peak === 6 ? ' today' : ''}</span></div><div class="chart">${bars}</div>`;
+  const max = Math.max(...w.vals), days = w.vals.map((_, i) => 'SMTWTFS'[(new Date().getDay() - 6 + i + 7) % 7]);
+  return `<div class="ihead"><span>${w.l}</span><span>peak ${w.fmt(max)}</span></div><div class="ichart">${w.vals.map((v, i) =>
+    `<div class="${i === 6 ? 'today' : ''}"><i style="height:${Math.max(4, v / max * 52)}px"></i>${days[i]}</div>`).join('')}</div>`;
 }
-
 function render() {
   const p = PROVIDERS[current];
   $('page1').innerHTML = `<div class="tiles">${p.tiles.map(tile).join('')}</div>`;
-  $('page2').innerHTML = chart(p.week) +
-    `<ul class="list"><li class="list-head"><span>${p.list.l}</span></li>${p.list.rows.map(([a, b]) => `<li><span>${a}</span><span>${b}</span></li>`).join('')}</ul>`;
-  const pill = p.pill;
-  if (pill.text) {
-    $('pill').textContent = pill.text;
-    $('pillMark').innerHTML = `<span class="phase" style="display:block;background:${pill.dot}"></span>`;
-  } else {
-    const c = 2 * Math.PI * 6.4;
-    $('pill').textContent = Math.round(pill.used * 100) + '%';
-    $('pillMark').innerHTML = `<svg class="ring" viewBox="0 0 17 17"><circle class="track" cx="8.5" cy="8.5" r="6.4"/><circle class="fill" cx="8.5" cy="8.5" r="6.4" stroke="${RING[state(pill.used)]}" stroke-dasharray="${pill.used * c} ${c}"/></svg>`;
-  }
-  const img = $('whoImg');
-  img.className = p.crab ? '' : 'mark';
-  if (!p.crab) img.src = p.mark;
+  $('page2').innerHTML = (p.week ? chart(p.week) : '') + `<ul class="ilist"><li class="ihead"><span>${p.list.l}</span></li>${p.list.rows.map(([a, b]) => `<li><span>${a}</span><span>${b}</span></li>`).join('')}</ul>`;
+  if (p.pill.text) { $('pill').textContent = p.pill.text; $('pillMark').innerHTML = `<span style="display:block;width:8px;height:8px;border-radius:50%;background:${p.pill.dot}"></span>`; }
+  else { const c = 2 * Math.PI * 6.4; $('pill').textContent = Math.round(p.pill.used * 100) + '%';
+    $('pillMark').innerHTML = `<svg class="ring" viewBox="0 0 17 17"><circle cx="8.5" cy="8.5" r="6.4" stroke="rgba(255,255,255,.18)"/><circle class="fill" cx="8.5" cy="8.5" r="6.4" stroke="${RING[state(p.pill.used)]}" stroke-dasharray="${p.pill.used * c} ${c}"/></svg>`; }
+  const img = $('whoImg'); img.className = p.crab ? '' : 'mark'; if (!p.crab) img.src = p.mark;
   $('who').setAttribute('aria-label', `Switch provider (showing ${p.name})`);
-  toggle.setAttribute('aria-label', `${p.name} usage ${$('pill').textContent}. ${island.classList.contains('open') ? 'Close' : 'Open'} details`);
-  setPage(0);
+  label(); setPage(0);
 }
+const label = () => toggle.setAttribute('aria-label', `${PROVIDERS[current].name} usage ${$('pill').textContent}. ${island.classList.contains('open') ? 'Close' : 'Open'} details`);
+function setPage(n) { page = n; pages.style.transform = `translateX(${-50 * n}%)`;
+  document.querySelectorAll('.dots button').forEach(b => b.setAttribute('aria-current', String(+b.dataset.page === n))); }
+function setOpen(open) { island.classList.toggle('open', open); toggle.setAttribute('aria-expanded', String(open)); label(); openedAtY = scrollY; }
 
-function setPage(n) {
-  page = n;
-  pages.style.transform = `translateX(${-50 * n}%)`;
-  document.querySelectorAll('.dots button').forEach(b => b.setAttribute('aria-current', String(+b.dataset.page === n)));
-}
-
-function setOpen(open) {
-  island.classList.toggle('open', open);
-  toggle.setAttribute('aria-expanded', String(open));
-  toggle.setAttribute('aria-label', toggle.getAttribute('aria-label').replace(/(Open|Close) details/, open ? 'Close details' : 'Open details'));
-  openedAtY = scrollY;
-}
-
-// Clawd: 8 fps when calm, up to 18 fps near the limit, frozen when out (AvatarView.fps).
+// Clawd: 8 fps when calm, up to 18 near the limit, frozen when out (the app's AvatarView).
 const frames = Array.from({ length: 20 }, (_, i) => { const im = new Image(); im.src = `assets/clawd-${i}.png`; return im.src; });
-let frame = 0, last = 0;
+let bigU = .7;
+const walkers = [{ el: $('whoImg'), u: () => PROVIDERS[current].crab ? PROVIDERS[current].pill.used : 1 },
+  { el: $('crabBig'), u: () => bigU }, { el: $('crabFinal'), u: () => .4 }].map(w => ({ ...w, f: 0, last: 0 }));
 function walk(ts) {
-  const p = PROVIDERS[current];
-  if (p.crab) {
-    const fps = 8 + Math.min(1, p.pill.used) * 10;
-    if (p.pill.used < 1 && ts - last > 1000 / fps) { frame = (frame + 1) % frames.length; last = ts; $('whoImg').src = frames[frame]; }
-  }
+  for (const w of walkers) { const u = w.u(); if (u >= 1) continue;
+    if (ts - w.last > 1000 / (8 + u * 10)) { w.f = (w.f + 1) % 20; w.last = ts; w.el.src = frames[w.f]; } }
   requestAnimationFrame(walk);
 }
-if (reduced) $('whoImg').src = frames[0]; else requestAnimationFrame(walk);
+if (!reduced) requestAnimationFrame(walk);
+document.querySelectorAll('.speed button').forEach(b => b.addEventListener('click', () => {
+  bigU = +b.dataset.u; document.querySelectorAll('.speed button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+}));
 
 $('who').addEventListener('click', () => {
-  const swap = document.querySelectorAll('.swap');
-  swap.forEach(s => s.classList.add('fading'));
-  setTimeout(() => { current = (current + 1) % PROVIDERS.length; if (PROVIDERS[current].crab) $('whoImg').src = frames[frame]; render(); swap.forEach(s => s.classList.remove('fading')); }, reduced ? 0 : 160);
+  const swap = document.querySelectorAll('.swap'); swap.forEach(s => s.classList.add('fading'));
+  setTimeout(() => { current = (current + 1) % PROVIDERS.length; if (PROVIDERS[current].crab) $('whoImg').src = frames[walkers[0].f];
+    render(); swap.forEach(s => s.classList.remove('fading')); }, reduced ? 0 : 160);
 });
 toggle.addEventListener('click', () => setOpen(!island.classList.contains('open')));
 document.querySelectorAll('.dots button').forEach(b => b.addEventListener('click', () => setPage(+b.dataset.page)));
 document.addEventListener('click', e => { if (!island.contains(e.target)) setOpen(false); });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && island.classList.contains('open')) { setOpen(false); toggle.focus(); }
-  if (island.contains(document.activeElement) && island.classList.contains('open')) {
-    if (e.key === 'ArrowRight') setPage(1);
-    if (e.key === 'ArrowLeft') setPage(0);
-  }
+  if (island.contains(document.activeElement) && island.classList.contains('open')) { if (e.key === 'ArrowRight') setPage(1); if (e.key === 'ArrowLeft') setPage(0); }
 });
-addEventListener('scroll', () => { if (Math.abs(scrollY - openedAtY) > 120) setOpen(false); }, { passive: true });
+addEventListener('scroll', () => { if (island.classList.contains('open') && Math.abs(scrollY - openedAtY) > 600) setOpen(false); }, { passive: true });
 
-// Swipe: drag on touch/mouse, or a sideways two-finger scroll on a trackpad.
-const pager = $('pager');
-let startX = null, dx = 0;
+const pager = $('pager'); let startX = null, dx = 0;
 pager.addEventListener('pointerdown', e => { startX = e.clientX; dx = 0; pages.style.transition = 'none'; });
-pager.addEventListener('pointermove', e => {
-  if (startX === null) return;
-  dx = e.clientX - startX;
-  pages.style.transform = `translateX(calc(${-50 * page}% + ${dx * 0.6}px))`;
-});
-const endDrag = () => {
-  if (startX === null) return;
-  startX = null; pages.style.transition = '';
-  setPage(dx < -40 ? 1 : dx > 40 ? 0 : page);
-};
-pager.addEventListener('pointerup', endDrag);
-pager.addEventListener('pointercancel', endDrag);
-pager.addEventListener('pointerleave', endDrag);
+pager.addEventListener('pointermove', e => { if (startX === null) return; dx = e.clientX - startX; pages.style.transform = `translateX(calc(${-50 * page}% + ${dx * .6}px))`; });
+const endDrag = () => { if (startX === null) return; startX = null; pages.style.transition = ''; setPage(dx < -40 ? 1 : dx > 40 ? 0 : page); };
+['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => pager.addEventListener(ev, endDrag));
 let wheelLock = 0;
-pager.addEventListener('wheel', e => {
-  if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
-  e.preventDefault();
-  if (Date.now() < wheelLock || Math.abs(e.deltaX) < 12) return;
-  setPage(e.deltaX > 0 ? 1 : 0); wheelLock = Date.now() + 600;
-}, { passive: false });
-
-// Live reset countdowns.
+pager.addEventListener('wheel', e => { if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; e.preventDefault();
+  if (Date.now() < wheelLock || Math.abs(e.deltaX) < 12) return; setPage(e.deltaX > 0 ? 1 : 0); wheelLock = Date.now() + 600; }, { passive: false });
 setInterval(() => document.querySelectorAll('[data-r]').forEach(el => el.textContent = 'resets in ' + until(left(+el.dataset.r))), 15000);
-
 render();
-// One orchestrated moment: the island opens by itself once, the way it does when you click it.
-setTimeout(() => { if (scrollY < 40) setOpen(true); }, reduced ? 0 : 900);
+
+// ---------- in-view moments ----------
+const once = (el, fn, threshold = .45) => { const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { fn(); io.disconnect(); } }, { threshold }); io.observe(el); };
+once($('mac'), () => setTimeout(() => setOpen(true), reduced ? 0 : 700), .6);
+once($('rings'), () => document.querySelectorAll('#rings .fill').forEach(c => { const L = 2 * Math.PI * 50; c.style.strokeDasharray = `${c.dataset.v * L} ${L}`; }));
+const week = [12.4, 31.9, 8.2, 44.7, 27.3, 19.8, 38.2], wmax = Math.max(...week);
+$('bars').innerHTML = week.map((v, i) => `<div class="${i === 6 ? 'today' : ''}"><i data-h="${v / wmax * 100}"></i>${'SMTWTFS'[(new Date().getDay() - 6 + i + 7) % 7]}</div>`).join('');
+once($('bars'), () => $('bars').querySelectorAll('i').forEach((b, i) => setTimeout(() => b.style.height = `calc(${b.dataset.h}% - 28px)`, reduced ? 0 : i * 70)));
+
+// ---------- film: plays while in view, pause button for everyone ----------
+const film = $('filmVideo'), pp = $('pp');
+const syncPP = () => { pp.setAttribute('aria-label', film.paused ? 'Play film' : 'Pause film');
+  $('ppIcon').innerHTML = film.paused ? '<path d="M4 2.5v11l9-5.5z"/>' : '<path d="M4 2.5h3v11H4zM9 2.5h3v11H9z"/>'; };
+let userPaused = false;
+pp.addEventListener('click', () => { if (film.paused) { userPaused = false; film.play(); } else { userPaused = true; film.pause(); } });
+film.addEventListener('play', syncPP); film.addEventListener('pause', syncPP);
+new IntersectionObserver(([e]) => { if (e.isIntersecting && !userPaused && !reduced) film.play().catch(() => {}); else if (!e.isIntersecting) film.pause(); }, { threshold: .4 }).observe(film);
+
+// ---------- strip arrows ----------
+document.querySelectorAll('.strip-nav button').forEach(b => b.addEventListener('click', () =>
+  $('strip').scrollBy({ left: b.dataset.dir * Math.min(440, innerWidth * .84), behavior: reduced ? 'auto' : 'smooth' })));
 </script>
 </body>
 </html>
