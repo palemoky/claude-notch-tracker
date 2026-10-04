@@ -61,34 +61,34 @@ Command Line Tools.
 
 <table>
 <tr>
-<td width="50%"><img src="docs/page-limits.png" alt="Limits page: 5-Hour, 7-Day, Fable weekly, and today's cost and tokens" /></td>
-<td width="50%"><img src="docs/page-sessions.png" alt="Claude week chart and active sessions: last 7 days of local spend above today's conversations" /></td>
+<td width="50%"><img src="docs/readme/shot-claude-limits.png" alt="Claude limits page: 5-Hour, 7-Day and Fable limits with reset countdowns, today's cost, credits and all-time spend" /></td>
+<td width="50%"><img src="docs/readme/shot-claude-week.png" alt="Claude detail page: a 7-day spend chart above today's sessions" /></td>
 </tr>
 <tr>
-<td><b>Limits.</b> 5-hour, 7-day and Fable weekly bars, plus today's cost.</td>
+<td><b>Claude limits.</b> 5-hour, 7-day and Fable weekly bars, plus today's cost.</td>
 <td><b>Week and sessions.</b> 7 days of spend, then today's conversations by name.</td>
 </tr>
 <tr>
-<td><img src="docs/page-alltime.png" alt="All-time top projects: biggest-spending projects ever" /></td>
-<td><img src="docs/settings.png" alt="Right-click settings menu: provider, icon, pause, hide in full screen, launch at login, updates" /></td>
+<td width="50%"><img src="docs/readme/shot-codex.png" alt="Codex page: 5-Hour and 7-Day windows, tokens today, credits, plan and all-time tokens" /></td>
+<td width="50%"><img src="docs/readme/shot-antigravity.png" alt="Antigravity page: 5-Hour and 7-Day quota, tokens today, all-time tokens and thinking tokens" /></td>
 </tr>
 <tr>
-<td><b>All-time projects.</b> Tap the sessions block to flip to your biggest projects.</td>
-<td><b>Settings.</b> Everything lives in the island's right-click menu.</td>
+<td><b>Codex.</b> Rate-limit windows, account tokens, credits and plan.</td>
+<td><b>Antigravity.</b> Quota windows, plus today's and all-time tokens.</td>
 </tr>
 <tr>
-<td><img src="docs/codex-limits.png" alt="Codex limits page: rate-limit windows above the 7-day token chart" /></td>
-<td><img src="docs/codex-tasks.png" alt="Codex detail page: weekly and all-time account totals above recent tasks" /></td>
+<td width="50%"><img src="docs/readme/shot-deepseek.png" alt="DeepSeek page: balance, off-peak pricing now, spend today and over the last 7 days" /></td>
+<td width="50%"><img src="docs/readme/shot-opencodego.png" alt="opencode-go page: 5-Hour, 7-Day and Monthly meters, Zen balance, renewal and sessions left" /></td>
 </tr>
 <tr>
-<td><b>Codex limits.</b> Rate-limit windows and the 7-day token chart.</td>
-<td><b>Codex tasks.</b> Account totals and your recent tasks.</td>
+<td><b>DeepSeek.</b> Balance, and whether you're paying peak or off-peak rates right now.</td>
+<td><b>opencode-go.</b> 5-hour, weekly and monthly meters, Zen balance and renewal.</td>
 </tr>
 </table>
 
 <div align="center">
-  <img src="docs/switch.gif" width="640" alt="One click on the left icon switches the island between Claude and Codex, collapsed or expanded" /><br/>
-  <sub>One click on the left icon switches providers, even while the island is open.</sub>
+  <img src="docs/readme/providers.gif" width="640" alt="One click on the left icon cycles the island through Claude, Codex, Antigravity, DeepSeek and opencode-go" /><br/>
+  <sub>One click on the left icon cycles through your providers, even while the island is open.</sub>
 </div>
 
 ## Providers
