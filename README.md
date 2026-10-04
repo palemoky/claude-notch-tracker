@@ -4,8 +4,8 @@
 
 # Claude Notch
 
-Live **Claude, Codex, Antigravity, DeepSeek and opencode-go** usage in your Mac's notch:<br/>
-limits, resets, tokens and cost, one click away.
+**AI usage limits in your Mac's notch, for Claude, Codex, Antigravity, DeepSeek and opencode-go.**<br/>
+Limits, resets, tokens and cost, one click away.
 
 <br/>
 
